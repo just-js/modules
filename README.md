@@ -7,3 +7,6 @@
 - libpng
 - skia
 - mysql
+- ffi
+- sqlite
+- memcache
