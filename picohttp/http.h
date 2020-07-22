@@ -28,7 +28,7 @@ struct httpContext {
   const char* status_message;
 };
 
-httpContext state[MAX_PIPELINE];
+thread_local httpContext state[MAX_PIPELINE];
 
 void GetUrl(const FunctionCallbackInfo<Value> &args);
 void GetMethod(const FunctionCallbackInfo<Value> &args);
