@@ -13,6 +13,17 @@ void Connect(const FunctionCallbackInfo<Value> &args);
 void Exec(const FunctionCallbackInfo<Value> &args);
 void Prepare(const FunctionCallbackInfo<Value> &args);
 void ExecPrepared(const FunctionCallbackInfo<Value> &args);
+
+void SendPrepare(const FunctionCallbackInfo<Value> &args);
+void SendExecPrepared(const FunctionCallbackInfo<Value> &args);
+void GetResult(const FunctionCallbackInfo<Value> &args);
+void ConsumeInput(const FunctionCallbackInfo<Value> &args);
+void IsBusy(const FunctionCallbackInfo<Value> &args);
+void SetNonBlocking(const FunctionCallbackInfo<Value> &args);
+void SetSingleRowMode(const FunctionCallbackInfo<Value> &args);
+void IsNonBlocking(const FunctionCallbackInfo<Value> &args);
+void Flush(const FunctionCallbackInfo<Value> &args);
+
 void Close(const FunctionCallbackInfo<Value> &args);
 void Clear(const FunctionCallbackInfo<Value> &args);
 void GetValue(const FunctionCallbackInfo<Value> &args);

@@ -46,10 +46,11 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target);
 }
 
 }
-
+#ifdef SHARED
 extern "C" {
 	void* _register_zlib() {
 		return (void*)just::zlib::Init;
 	}
 }
+#endif
 #endif

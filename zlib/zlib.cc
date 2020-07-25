@@ -1,7 +1,7 @@
 #include "zlib.h"
 
 void just::zlib::FreeMemory(void* buf, size_t length, void* data) {
-  fprintf(stderr, "free: %lu\n", length);
+  //fprintf(stderr, "free: %lu\n", length);
 }
 
 void just::zlib::Crc32(const FunctionCallbackInfo<Value> &args) {
@@ -149,7 +149,7 @@ void just::zlib::CreateInflate(const FunctionCallbackInfo<Value> &args) {
   int windowbits = Z_DEFAULT_WINDOW_BITS;
   Local<ArrayBuffer> inab = args[0].As<ArrayBuffer>();
   std::shared_ptr<BackingStore> in = inab->GetBackingStore();
-  int outlen = 4096;
+  int outlen = 4096; // todo: use size of buffer
   if (argc > 1) {
     outlen = args[1]->Uint32Value(context).ToChecked();
   }

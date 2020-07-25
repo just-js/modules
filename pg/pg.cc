@@ -33,6 +33,125 @@ void just::pg::Exec(const FunctionCallbackInfo<Value> &args) {
   database->SetAlignedPointerInInternalField(1, result);
 }
 
+void just::pg::SendPrepare(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Context> context = isolate->GetCurrentContext();
+  Local<Object> database = args[0].As<Object>();
+  PGconn* pq = (PGconn*)database->GetAlignedPointerFromInternalField(0);
+  String::Utf8Value name(isolate, args[1]);
+  String::Utf8Value sql(isolate, args[2]);
+  int argc = args.Length();
+  int nparams = argc - 3;
+  Oid* oids = (Oid*)calloc(nparams, sizeof(Oid));
+  Oid* oid = oids;
+  for (int i = 0; i < nparams; i++) {
+    *oid = args[i]->Int32Value(context).ToChecked();
+    oid++;
+  }
+  int r = PQsendPrepare(pq, *name, *sql, nparams, oids);
+  args.GetReturnValue().Set(Integer::New(isolate, r));
+}
+
+void just::pg::SendExecPrepared(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Object> database = args[0].As<Object>();
+  PGconn* pq = (PGconn*)database->GetAlignedPointerFromInternalField(0);
+  String::Utf8Value name(isolate, args[1]);
+  int argc = args.Length();
+  int nparams = argc - 2;
+  char* paramValues[nparams];
+  int paramLengths[nparams];
+  int paramFormats[nparams];
+  for (int i = 0; i < nparams; i++) {
+    String::Utf8Value param(isolate, args[i + 2]);
+    paramValues[i] = (char*)calloc(1, strlen(*param));
+    strcpy(paramValues[i], *param);
+    paramLengths[i] = param.length();
+    paramFormats[i] = 0;
+  }
+  int r = PQsendQueryPrepared(pq, *name, nparams, paramValues, paramLengths, paramFormats, 0);
+  for (int i = 0; i < nparams; i++) {
+    free(paramValues[i]);
+  }
+  args.GetReturnValue().Set(Integer::New(isolate, r));
+}
+
+void just::pg::GetResult(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Context> context = isolate->GetCurrentContext();
+  Local<Object> database = args[0].As<Object>();
+  PGconn* pq = (PGconn*)database->GetAlignedPointerFromInternalField(0);
+  PGresult* result = PQgetResult(pq);
+  if (result == nullptr) {
+    args.GetReturnValue().Set(Integer::New(isolate, 0));
+    return;
+  }
+  database->Set(context, String::NewFromUtf8Literal(isolate, "tuples", NewStringType::kNormal), Integer::New(isolate, PQntuples(result))).Check();
+  database->Set(context, String::NewFromUtf8Literal(isolate, "fields", NewStringType::kNormal), Integer::New(isolate, PQnfields(result))).Check();
+  database->Set(context, String::NewFromUtf8Literal(isolate, "status", NewStringType::kNormal), Integer::New(isolate, PQresultStatus(result))).Check();
+  database->SetAlignedPointerInInternalField(1, result);
+  args.GetReturnValue().Set(Integer::New(isolate, 1));
+}
+
+void just::pg::ConsumeInput(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Object> database = args[0].As<Object>();
+  PGconn* pq = (PGconn*)database->GetAlignedPointerFromInternalField(0);
+  int r = PQconsumeInput(pq);
+  args.GetReturnValue().Set(Integer::New(isolate, r));
+}
+
+void just::pg::IsBusy(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Object> database = args[0].As<Object>();
+  PGconn* pq = (PGconn*)database->GetAlignedPointerFromInternalField(0);
+  int r = PQisBusy(pq);
+  args.GetReturnValue().Set(Integer::New(isolate, r));
+}
+
+void just::pg::SetNonBlocking(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Context> context = isolate->GetCurrentContext();
+  Local<Object> database = args[0].As<Object>();
+  PGconn* pq = (PGconn*)database->GetAlignedPointerFromInternalField(0);
+  int on = args[1]->Int32Value(context).ToChecked();
+  int r = PQsetnonblocking(pq, on);
+  args.GetReturnValue().Set(Integer::New(isolate, r));
+}
+
+void just::pg::IsNonBlocking(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Object> database = args[0].As<Object>();
+  PGconn* pq = (PGconn*)database->GetAlignedPointerFromInternalField(0);
+  int r = PQisnonblocking(pq);
+  args.GetReturnValue().Set(Integer::New(isolate, r));
+}
+
+void just::pg::Flush(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Object> database = args[0].As<Object>();
+  PGconn* pq = (PGconn*)database->GetAlignedPointerFromInternalField(0);
+  int r = PQflush(pq);
+  args.GetReturnValue().Set(Integer::New(isolate, r));
+}
+
+void just::pg::SetSingleRowMode(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Object> database = args[0].As<Object>();
+  PGconn* pq = (PGconn*)database->GetAlignedPointerFromInternalField(0);
+  int r = PQsetSingleRowMode(pq);
+  args.GetReturnValue().Set(Integer::New(isolate, r));
+}
+
 void just::pg::Prepare(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -184,10 +303,23 @@ void just::pg::Clear(const FunctionCallbackInfo<Value> &args) {
 void just::pg::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> module = ObjectTemplate::New(isolate);
 
+  // blocking operations
   SET_METHOD(isolate, module, "connect", Connect);
   SET_METHOD(isolate, module, "exec", Exec);
   SET_METHOD(isolate, module, "prepare", Prepare);
   SET_METHOD(isolate, module, "execPrepared", ExecPrepared);
+
+  // non blocking operations
+  SET_METHOD(isolate, module, "sendPrepare", SendPrepare);
+  SET_METHOD(isolate, module, "sendExecPrepared", SendExecPrepared);
+  SET_METHOD(isolate, module, "getResult", GetResult);
+  SET_METHOD(isolate, module, "consumeInput", ConsumeInput);
+  SET_METHOD(isolate, module, "isBusy", IsBusy);
+  SET_METHOD(isolate, module, "setNonBlocking", SetNonBlocking);
+  SET_METHOD(isolate, module, "isNonBlocking", IsNonBlocking);
+  SET_METHOD(isolate, module, "flush", Flush);
+  SET_METHOD(isolate, module, "setSingleRowMode", SetSingleRowMode);
+
   SET_METHOD(isolate, module, "close", Close);
   SET_METHOD(isolate, module, "clear", Clear);
   SET_METHOD(isolate, module, "getValue", GetValue);
