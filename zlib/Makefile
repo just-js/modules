@@ -1,5 +1,6 @@
-C = gcc
-CC = g++
+C=gcc
+CC=g++
+ZLIB_VERSION="1.2.11"
 
 .PHONY: help clean
 
@@ -8,19 +9,19 @@ help:
 
 deps: ## dependencies
 	mkdir -p deps
-	curl -L -o deps/zlib-1.2.11.tar.gz https://github.com/madler/zlib/archive/v1.2.11.tar.gz
-	tar -zxvf deps/zlib-1.2.11.tar.gz	-C deps/
-	make -C deps/zlib-1.2.11/ distclean
-	cd deps/zlib-1.2.11 && CFLAGS='-mstackrealign -fPIC -O3' ./configure --static && cd ../../
-	make -C deps/zlib-1.2.11/
+	curl -L -o deps/zlib-$(ZLIB_VERSION).tar.gz https://github.com/madler/zlib/archive/v$(ZLIB_VERSION).tar.gz
+	tar -zxvf deps/zlib-$(ZLIB_VERSION).tar.gz	-C deps/
+	make -C deps/zlib-$(ZLIB_VERSION)/ distclean
+	cd deps/zlib-$(ZLIB_VERSION) && CFLAGS='-mstackrealign -fPIC -O3' ./configure --static && cd ../../
+	make -C deps/zlib-$(ZLIB_VERSION)/
 
 zlib.so: ## build shared library
-	$(CC) -c -DSHARED -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/zlib-1.2.11 -I../../just -I../../just/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter zlib.cc
-	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group zlib.o deps/zlib-1.2.11/libz.a -Wl,--end-group -Wl,-soname=zlib.so -o zlib.so
+	$(CC) -c -DSHARED -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/zlib-$(ZLIB_VERSION) -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter zlib.cc
+	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group zlib.o deps/zlib-$(ZLIB_VERSION)/libz.a -Wl,--end-group -Wl,-soname=zlib.so -o zlib.so
 
 zlib.a: ## build shared library
-	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/zlib-1.2.11 -I../../just -I../../just/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter zlib.cc
-	ar -crsT zlib.a zlib.o deps/zlib-1.2.11/libz.a
+	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/zlib-$(ZLIB_VERSION) -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter zlib.cc
+	ar -crsT zlib.a zlib.o deps/zlib-$(ZLIB_VERSION)/libz.a
 
 clean: ## tidy up
 	rm -f *.o
