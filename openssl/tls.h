@@ -1,7 +1,7 @@
 #ifndef JUST_TLS_H
 #define JUST_TLS_H
 
-#include "just.h"
+#include <just.h>
 #include <openssl/opensslv.h>
 #include <openssl/err.h>
 #include <openssl/dh.h>

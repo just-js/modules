@@ -1,7 +1,7 @@
 #ifndef JUST_CRYPTO_H
 #define JUST_CRYPTO_H
 
-#include "just.h"
+#include <just.h>
 #include <openssl/opensslv.h>
 #include <openssl/err.h>
 #include <openssl/dh.h>
