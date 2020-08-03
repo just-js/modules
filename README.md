@@ -10,3 +10,6 @@
 - ffi
 - sqlite
 - memcache
+- zlib-ng (already done?)
+- boringssl
+- mbedtls (already done?)

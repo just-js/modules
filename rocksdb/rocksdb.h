@@ -34,9 +34,11 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target);
 
 }
 
+#ifdef SHARED
 extern "C" {
 	void* _register_rocksdb() {
 		return (void*)just::rocksdb::Init;
 	}
 }
+#endif
 #endif

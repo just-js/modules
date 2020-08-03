@@ -43,6 +43,9 @@ all: ## make all
 	make http.so
 	make http.a
 
+install: ## copy shared libarary to /usr/local/lib/just
+	sudo mkdir -p /usr/local/lib/just && sudo cp -f http.so /usr/local/lib/just/
+
 cleanall: ## tidy up dependencies
 	make clean
 	rm -fr deps

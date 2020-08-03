@@ -17,6 +17,10 @@ rocksdb.so: ## build shared library
 	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/rocksdb-6.10.2/include -I../../just -I../../just/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter rocksdb.cc
 	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group rocksdb.o deps/rocksdb-6.10.2/librocksdb.a -Wl,--end-group -Wl,-soname=rocksdb.so -o rocksdb.so
 
+rocksdb.a: ## build static library
+	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/rocksdb-6.10.2/include -I../../just -I../../just/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter rocksdb.cc
+	ar -crsT rocksdb.a rocksdb.o deps/rocksdb-6.10.2/librocksdb.a
+
 clean: ## tidy up
 	rm -f *.o
 	rm -f *.so
@@ -30,5 +34,8 @@ all: ## make all
 cleanall: ## tidy up dependencies
 	make clean
 	rm -fr deps
+
+install: ## copy shared libarary to /usr/local/lib/just
+	sudo mkdir -p /usr/local/lib/just && sudo cp -f rocksdb.so /usr/local/lib/just/
 
 .DEFAULT_GOAL := help

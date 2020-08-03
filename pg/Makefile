@@ -31,6 +31,9 @@ all: ## make all
 	make deps
 	make pg.so
 
+install: ## copy shared libarary to /usr/local/lib/just
+	sudo mkdir -p /usr/local/lib/just && sudo cp -f pg.so /usr/local/lib/just/
+
 cleanall: ## tidy up dependencies
 	make clean
 	rm -fr deps
