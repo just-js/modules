@@ -19,7 +19,7 @@ zlib.so: ## build shared library
 	$(CC) -c -DSHARED -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/zlib-$(ZLIB_VERSION) -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter zlib.cc
 	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group zlib.o deps/zlib-$(ZLIB_VERSION)/libz.a -Wl,--end-group -Wl,-soname=zlib.so -o zlib.so
 
-zlib.a: ## build shared library
+zlib.a: ## build static library
 	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/zlib-$(ZLIB_VERSION) -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter zlib.cc
 	ar -crsT zlib.a zlib.o deps/zlib-$(ZLIB_VERSION)/libz.a
 
