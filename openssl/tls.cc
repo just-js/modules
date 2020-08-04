@@ -65,6 +65,12 @@ void just::tls::Write(const FunctionCallbackInfo<Value> &args) {
     off = args[2]->Int32Value(context).ToChecked();
   }
   char* dest = (char*)buf->Data() + off;
+  // todo: this is ugly - pick one way of creating a "handle" and use it everywhere
+  if (argc > 3) {
+    Local<ArrayBuffer> ab = args[3].As<ArrayBuffer>();
+    std::shared_ptr<BackingStore> buf = ab->GetBackingStore();
+    dest = (char*)buf->Data() + off;
+  }
   args.GetReturnValue().Set(Integer::New(isolate, SSL_write(ssl, 
     (void*)dest, len)));
 }
