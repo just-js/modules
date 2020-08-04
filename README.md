@@ -1,3 +1,29 @@
+## Internal
+
+- vm
+- sys
+- net
+- loop
+- fs
+- versions
+- tty
+- encode
+- inspector
+- sha1
+- signals
+- thread
+- udp
+
+## Blessed
+
+- blake3
+- openssl
+- postgres
+- http
+- rocksdb
+- wasm/libwabt - emscripten
+- zlib
+
 ## Wanted
 
 - libvirt
@@ -6,11 +32,11 @@
 - hiredis
 - libpng
 - skia
+- libwabt c++
 - mysql
 - ffi
 - sqlite
 - memcache
 - zlib-ng (already done?)
 - boringssl
-- mbedtls (already done?)
-- blake3: https://github.com/BLAKE3-team/BLAKE3/blob/master/c/README.md
+- mbedtls (already done?): https://github.com/billywhizz/just/tree/0bfbdda9490e2231cf56b8f3986f4983d92e16ec/modules
