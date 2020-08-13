@@ -18,8 +18,8 @@
 
 - blake3
 - openssl
-- postgres
-- http
+- pg
+- picohttp
 - rocksdb
 - wasm/libwabt - emscripten
 - zlib
@@ -36,7 +36,7 @@
 - mysql
 - ffi
 - sqlite
-- memcache
+- memcached
 - zlib-ng (already done?)
 - boringssl
 - mbedtls (already done?): https://github.com/billywhizz/just/tree/0bfbdda9490e2231cf56b8f3986f4983d92e16ec/modules
