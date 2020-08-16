@@ -7,19 +7,22 @@ void just::ffi::FfiPrepCif(const FunctionCallbackInfo<Value> &args) {
   HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();
   Local<ArrayBuffer> cb = args[0].As<ArrayBuffer>();
-  //int type = args[1]->Int32Value(context).ToChecked();
-
-
-  //Local<Array> params = args[1].As<Array>();
-
-  //unsigned int nargs = args[1]->Uint32Value(context).ToChecked();
-  unsigned int nargs = 1;
+  int rtype = args[1]->Int32Value(context).ToChecked();
+  Local<Array> params = args[2].As<Array>();
   ffi_status status;
   ffi_abi abi = FFI_DEFAULT_ABI;
+  // todo: we have to free this
   ffi_cif* cif = (ffi_cif*)calloc(1, sizeof(ffi_cif));
-  ffi_type* argtypes[1];
-  argtypes[0] = &ffi_type_pointer;
-  status = ffi_prep_cif(cif, abi, nargs, &ffi_type_uint32, argtypes);
+  unsigned int nargs = params->Length();
+  // todo: we have to free this
+  ffi_type** argtypes = (ffi_type**)calloc(nargs, sizeof(ffi_type));
+  //ffi_type* argtypes[nargs];
+  for (int i = 0; i < nargs; i++) {
+    Local<Value> p = params->Get(context, i).ToLocalChecked();
+    int rtype = p->Int32Value(context).ToChecked();
+    argtypes[i] = just_ffi_types[rtype];
+  }
+  status = ffi_prep_cif(cif, abi, nargs, just_ffi_types[rtype], argtypes);
   if (status != FFI_OK) {
     args.GetReturnValue().Set(Integer::New(isolate, status));
     return;
@@ -39,12 +42,14 @@ void just::ffi::FfiCall(const FunctionCallbackInfo<Value> &args) {
   char* cstr = *str;
   ffi_cif* cif = (ffi_cif*)cb->GetAlignedPointerFromInternalField(1);
   ffi_status status;
-  ffi_type* fnargs[1];
   ffi_arg result;
+  int argc = args.Length();
+  //ffi_type* fnargs[1];
   void* values[1];
-  fnargs[0] = &ffi_type_pointer;
+  //fnargs[0] = &ffi_type_pointer;
   values[0] = &cstr;
-  status = ffi_prep_cif(cif, FFI_DEFAULT_ABI, 1, &ffi_type_uint32, fnargs);
+  //status = ffi_prep_cif(cif, FFI_DEFAULT_ABI, 1, &ffi_type_uint32, fnargs);
+  status = ffi_prep_cif(cif, FFI_DEFAULT_ABI, 1, &ffi_type_uint32, cif->arg_types);
   if (status != FFI_OK) {
     args.GetReturnValue().Set(Integer::New(isolate, status));
     return;
