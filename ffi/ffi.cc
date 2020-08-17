@@ -16,8 +16,7 @@ void just::ffi::FfiPrepCif(const FunctionCallbackInfo<Value> &args) {
   unsigned int nargs = params->Length();
   // todo: we have to free this
   ffi_type** argtypes = (ffi_type**)calloc(nargs, sizeof(ffi_type));
-  //ffi_type* argtypes[nargs];
-  for (int i = 0; i < nargs; i++) {
+  for (unsigned int i = 0; i < nargs; i++) {
     Local<Value> p = params->Get(context, i).ToLocalChecked();
     int rtype = p->Int32Value(context).ToChecked();
     argtypes[i] = just_ffi_types[rtype];
@@ -34,30 +33,45 @@ void just::ffi::FfiPrepCif(const FunctionCallbackInfo<Value> &args) {
 void just::ffi::FfiCall(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
   Local<ArrayBuffer> cb = args[0].As<ArrayBuffer>();
   Local<BigInt> address64 = Local<BigInt>::Cast(args[1]);
   void* fn = reinterpret_cast<void*>(address64->Uint64Value());
-  String::Utf8Value str(isolate, args[2]);
-  char* cstr = *str;
   ffi_cif* cif = (ffi_cif*)cb->GetAlignedPointerFromInternalField(1);
-  ffi_status status;
   ffi_arg result;
-  int argc = args.Length();
-  //ffi_type* fnargs[1];
-  void* values[1];
-  //fnargs[0] = &ffi_type_pointer;
-  values[0] = &cstr;
-  //status = ffi_prep_cif(cif, FFI_DEFAULT_ABI, 1, &ffi_type_uint32, fnargs);
-  status = ffi_prep_cif(cif, FFI_DEFAULT_ABI, 1, &ffi_type_uint32, cif->arg_types);
-  if (status != FFI_OK) {
-    args.GetReturnValue().Set(Integer::New(isolate, status));
+  std::shared_ptr<BackingStore> backing = cb->GetBackingStore();
+  void* start = backing->Data();
+  void** values = &start;
+  ffi_call(cif, FFI_FN(fn), &result, values);
+  if (cif->rtype == just_ffi_types[FFI_TYPE_UINT32]) {
+    args.GetReturnValue().Set(Integer::New(isolate, (uint32_t)result));
     return;
   }
-  ffi_call(cif, FFI_FN(fn), &result, values);
-  args.GetReturnValue().Set(Integer::New(isolate, (uint32_t)result));
+  if (cif->rtype == just_ffi_types[FFI_TYPE_POINTER]) {
+    args.GetReturnValue().Set(BigInt::New(isolate, (uint64_t)result));
+    return;
+  }
 }
 
+/*
+void just::ffi::FfiCall(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<ArrayBuffer> cb = args[0].As<ArrayBuffer>();
+  Local<BigInt> address64 = Local<BigInt>::Cast(args[1]);
+  void* fn = reinterpret_cast<void*>(address64->Uint64Value());
+  ffi_cif* cif = (ffi_cif*)cb->GetAlignedPointerFromInternalField(1);
+  ffi_arg result;
+  int argc = args.Length();
+  String::Utf8Value str(isolate, args[2]);
+  void* values[argc - 2];
+  char* cstr = *str;
+  values[0] = &cstr;
+  ffi_call(cif, FFI_FN(fn), &result, values);
+  if (cif->rtype == just_ffi_types[FFI_TYPE_UINT32]) {
+    args.GetReturnValue().Set(Integer::New(isolate, (uint32_t)result));
+  }
+}
+*/
 void just::ffi::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> module = ObjectTemplate::New(isolate);
   SET_METHOD(isolate, module, "ffiPrepCif", FfiPrepCif);
