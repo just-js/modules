@@ -19,8 +19,13 @@ void just::html::Escape(const FunctionCallbackInfo<Value> &args) {
   const uint8_t* source = data + off;
   uint8_t* dest;
   size_t size = hesc_escape_html(&dest, source, len);
+  if (size > len) {
+    EscapedString* source = new EscapedString(dest, size);
+    args.GetReturnValue().Set(v8::String::NewExternalOneByte(isolate, source).ToLocalChecked());
+    return;
+  }
   args.GetReturnValue().Set(String::NewFromUtf8(isolate, (const char*)dest, 
-    NewStringType::kNormal, size).ToLocalChecked());
+    NewStringType::kInternalized, size).ToLocalChecked());
 }
 
 void just::html::Init(Isolate* isolate, Local<ObjectTemplate> target) {
