@@ -25,7 +25,7 @@ void just::html::Escape(const FunctionCallbackInfo<Value> &args) {
     return;
   }
   args.GetReturnValue().Set(String::NewFromUtf8(isolate, (const char*)dest, 
-    NewStringType::kInternalized, size).ToLocalChecked());
+    NewStringType::kNormal, size).ToLocalChecked());
 }
 
 void just::html::Init(Isolate* isolate, Local<ObjectTemplate> target) {
