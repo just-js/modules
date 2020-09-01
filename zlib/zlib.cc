@@ -121,6 +121,7 @@ void just::zlib::CreateDeflate(const FunctionCallbackInfo<Value> &args) {
     outlen = args[1]->Uint32Value(context).ToChecked();
   }
   void* chunk = calloc(1, outlen);
+  // TODO: pass stream as deleter_data so we can free it
   std::unique_ptr<BackingStore> out =
       ArrayBuffer::NewBackingStore(chunk, outlen, FreeMemory, nullptr);
   Local<ArrayBuffer> outab = ArrayBuffer::New(isolate, std::move(out));

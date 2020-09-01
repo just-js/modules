@@ -1,5 +1,47 @@
 #include "html.h"
 
+/*
+void just::sys::FindFast(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Context> context = isolate->GetCurrentContext();
+  Local<ArrayBuffer> buf = args[0].As<ArrayBuffer>();
+  std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
+  Local<ArrayBuffer> rbuf = args[1].As<ArrayBuffer>();
+  std::shared_ptr<BackingStore> results = rbuf->GetBackingStore();
+  int argc = args.Length();
+  size_t bytes = backing->ByteLength();
+  if (argc > 2) {
+    bytes = args[2]->Int32Value(context).ToChecked();
+  }
+  size_t off = 0;
+  if (argc > 3) {
+    off = args[3]->Int32Value(context).ToChecked();
+  }
+  const char* next = (const char*)backing->Data() + off;
+  const char* needle = "\r\n\r\n";
+  uint32_t* offsets = (uint32_t*)results->Data();
+  int nlen = 4;
+  size_t end = bytes + off;
+  __m128i needle16 = _mm_loadu_si128((const __m128i *)needle);
+  int count = 0;
+  int orig = off;
+  int r = 0;
+  __m128i haystack16;
+  while (off < end) {
+    haystack16 = _mm_loadu_si128((const __m128i *)next);
+    r = _mm_cmpestri(needle16, nlen, haystack16, 16, _SIDD_CMP_EQUAL_ORDERED | _SIDD_UBYTE_OPS);
+    if (r < (16 - nlen)) {
+      offsets[count++] = r + off + nlen;
+    }
+    off += 16 - nlen;
+    next += 16 - nlen;
+  }
+  offsets[count] = orig + bytes;
+  args.GetReturnValue().Set(Integer::New(isolate, count));
+}
+*/
+
 void just::html::Escape(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
