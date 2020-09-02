@@ -14,8 +14,12 @@ void just::zlib::Crc32(const FunctionCallbackInfo<Value> &args) {
   bool lossless = true;
   Local<BigInt> crc64 = args[2]->ToBigInt(context).ToLocalChecked();
   uint64_t crc = crc64->Uint64Value(&lossless);
-  args.GetReturnValue().Set(BigInt::New(isolate, crc32(crc, 
-    (const uint8_t *)backing->Data(), len)));
+  unsigned int off = 0;
+  if (args.Length() > 3) {
+    off = args[3]->Uint32Value(context).ToChecked();
+  }
+  const uint8_t* source = (const uint8_t *)backing->Data() + off;
+  args.GetReturnValue().Set(BigInt::New(isolate, crc32(crc, source, len)));
  
 }
 
