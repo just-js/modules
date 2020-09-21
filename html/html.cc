@@ -42,13 +42,58 @@ void just::sys::FindFast(const FunctionCallbackInfo<Value> &args) {
 }
 */
 
+std::string htmlTranslate(const char *str, size_t length)
+{
+    std::string ret;
+    ret.reserve(length + 64);
+    auto end = str + length;
+    while (str != end)
+    {
+        switch (*str)
+        {
+            case '"':
+                ret.append("&quot;", 6);
+                break;
+            case '&':
+                ret.append("&amp;", 5);
+                break;
+            case '<':
+                ret.append("&lt;", 4);
+                break;
+            case '>':
+                ret.append("&gt;", 4);
+                break;
+            default:
+                ret.push_back(*str);
+                break;
+        }
+        ++str;
+    }
+    return ret;
+}
+
+static bool needTranslation(const char *str, size_t length) {
+  for (size_t i = 0; i < length; i++) {
+    switch (str[i]) {
+      case '"':
+      case '&':
+      case '<':
+      case '>':
+          return true;
+      default:
+          continue;
+    }
+  }
+  return false;
+}
+
 void just::html::Escape(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
   std::shared_ptr<BackingStore> backing = ab->GetBackingStore();
-  const uint8_t* data = static_cast<uint8_t *>(backing->Data());
+  const char* data = static_cast<char *>(backing->Data());
   size_t len = backing->ByteLength();
   int argc = args.Length();
   if (argc > 1) {
@@ -58,16 +103,15 @@ void just::html::Escape(const FunctionCallbackInfo<Value> &args) {
   if (argc > 2) {
     off = args[2]->Int32Value(context).ToChecked();
   }
-  const uint8_t* source = data + off;
-  uint8_t* dest;
-  size_t size = hesc_escape_html(&dest, source, len);
-  if (size > len) {
-    EscapedString* source = new EscapedString(dest, size);
-    args.GetReturnValue().Set(v8::String::NewExternalOneByte(isolate, source).ToLocalChecked());
+  const char* source = data + off;
+  if (!needTranslation(source, len)) {
+    args.GetReturnValue().Set(String::NewFromUtf8(isolate, source, 
+      NewStringType::kNormal, len).ToLocalChecked());
     return;
   }
-  args.GetReturnValue().Set(String::NewFromUtf8(isolate, (const char*)dest, 
-    NewStringType::kNormal, size).ToLocalChecked());
+  std::string escaped = htmlTranslate(source, len);
+  args.GetReturnValue().Set(String::NewFromUtf8(isolate, escaped.c_str(), 
+    NewStringType::kNormal, escaped.length()).ToLocalChecked());
 }
 
 void just::html::Init(Isolate* isolate, Local<ObjectTemplate> target) {
