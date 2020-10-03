@@ -12,7 +12,7 @@ deps: ## dependencies
 	curl -L -o deps/blake3-$(BLAKE3_VERSION).tar.gz https://github.com/BLAKE3-team/BLAKE3/archive/$(BLAKE3_VERSION).tar.gz
 	tar -zxvf deps/blake3-$(BLAKE3_VERSION).tar.gz	-C deps/
 
-libs: ## compile the object files 
+libs: deps ## compile the object files 
 	$(C) -c -DSHARED -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/BLAKE3-$(BLAKE3_VERSION)/c -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter deps/BLAKE3-$(BLAKE3_VERSION)/c/blake3.c
 	$(C) -c -DSHARED -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/BLAKE3-$(BLAKE3_VERSION)/c -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter deps/BLAKE3-$(BLAKE3_VERSION)/c/blake3_dispatch.c
 	$(C) -c -DSHARED -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/BLAKE3-$(BLAKE3_VERSION)/c -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter deps/BLAKE3-$(BLAKE3_VERSION)/c/blake3_portable.c

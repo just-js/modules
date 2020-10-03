@@ -11,10 +11,10 @@ deps: ## dependencies
 	curl -L -o deps/picohttpparser/picohttpparser.h https://raw.githubusercontent.com/h2o/picohttpparser/master/picohttpparser.h
 	curl -L -o deps/picohttpparser/picohttpparser.c https://raw.githubusercontent.com/h2o/picohttpparser/master/picohttpparser.c
 
-picohttpparser.o: ## compile picohttpparser lib
+picohttpparser.o: deps ## compile picohttpparser lib
 	$(C) -fPIC -c -DV8_COMPRESS_POINTERS -Ideps/picohttpparser -O3 -Wall -Wextra -march=native -mtune=native -msse4 deps/picohttpparser/picohttpparser.c
 
-picohttpparser.debug: ## compile picohttpparser lib
+picohttpparser.debug: deps ## compile picohttpparser lib
 	$(C) -fPIC -c -DV8_COMPRESS_POINTERS -Ideps/picohttpparser -g -O3 -Wall -Wextra -march=native -mtune=native -msse4 deps/picohttpparser/picohttpparser.c
 
 http.so: ## build shared library
