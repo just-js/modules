@@ -21,7 +21,7 @@ zlib.so: ## build shared library
 
 zlib.a: ## build static library
 	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/zlib-$(ZLIB_VERSION) -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter zlib.cc
-	ar -crsT zlib.a zlib.o deps/zlib-$(ZLIB_VERSION)/libz.a
+	gcc-ar -crsT zlib.a zlib.o deps/zlib-$(ZLIB_VERSION)/libz.a
 
 clean: ## tidy up
 	rm -f *.o
