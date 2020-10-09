@@ -1,6 +1,6 @@
 C=gcc
 CC=g++
-ZLIB_VERSION="1.2.11"
+ZLIB_VERSION=1.2.11
 
 .PHONY: help clean
 
@@ -15,11 +15,11 @@ deps: ## dependencies
 	cd deps/zlib-$(ZLIB_VERSION) && CFLAGS='-mstackrealign -fPIC -O3' ./configure --static && cd ../../
 	make -C deps/zlib-$(ZLIB_VERSION)/
 
-zlib.so: ## build shared library
+zlib.so: deps ## build shared library
 	$(CC) -c -DSHARED -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/zlib-$(ZLIB_VERSION) -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter zlib.cc
 	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group zlib.o deps/zlib-$(ZLIB_VERSION)/libz.a -Wl,--end-group -Wl,-soname=zlib.so -o zlib.so
 
-zlib.a: ## build static library
+zlib.a: deps ## build static library
 	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/zlib-$(ZLIB_VERSION) -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter zlib.cc
 	gcc-ar -crsT zlib.a zlib.o deps/zlib-$(ZLIB_VERSION)/libz.a
 
