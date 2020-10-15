@@ -92,9 +92,9 @@ void just::html::Escape(const FunctionCallbackInfo<Value> &args) {
   HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
-  std::shared_ptr<BackingStore> backing = ab->GetBackingStore();
-  const char* data = static_cast<char *>(backing->Data());
-  size_t len = backing->ByteLength();
+  just::buffer* buf = getBuffer(ab);
+  const char* data = static_cast<char *>(buf->data);
+  size_t len = buf->len;
   int argc = args.Length();
   if (argc > 1) {
     len = args[1]->Int32Value(context).ToChecked();

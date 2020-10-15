@@ -159,15 +159,15 @@ void just::http::ParseRequests(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();
-  Local<ArrayBuffer> buf = args[0].As<ArrayBuffer>();
+  Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
   size_t bytes = args[1]->Int32Value(context).ToChecked();
   int argc = args.Length();
   size_t off = 0;
   if (argc > 2) {
     off = args[2]->Int32Value(context).ToChecked();
   }
-  std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
-  char* next = (char*)backing->Data() + off;
+  just::buffer* buf = getBuffer(ab);
+  char* next = (char*)buf->data + off;
   int count = 0;
   state[count].num_headers = JUST_MAX_HEADERS;
   //TODO: buffer overrun
@@ -194,15 +194,15 @@ void just::http::ParseResponses(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();
-  Local<ArrayBuffer> buf = args[0].As<ArrayBuffer>();
+  Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
   size_t bytes = args[1]->Int32Value(context).ToChecked();
   int argc = args.Length();
   size_t off = 0;
   if (argc > 2) {
     off = args[2]->Int32Value(context).ToChecked();
   }
-  std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
-  char* next = (char*)backing->Data() + off;
+  just::buffer* buf = getBuffer(ab);
+  char* next = (char*)buf->data + off;
   int count = 0;
   state[count].num_headers = JUST_MAX_HEADERS;
   //TODO: buffer overrun
