@@ -37,6 +37,6 @@ cleanall: ## tidy up dependencies
 	rm -fr deps
 
 install: ## copy shared libarary to /usr/local/lib/just
-	sudo mkdir -p /usr/local/lib/just && sudo cp -f zlib.so /usr/local/lib/just/
+	sudo mkdir -p /usr/local/lib/just && sudo cp -f tcc.so /usr/local/lib/just/
 
 .DEFAULT_GOAL := help

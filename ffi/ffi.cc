@@ -46,6 +46,10 @@ void just::ffi::FfiCall(const FunctionCallbackInfo<Value> &args) {
     args.GetReturnValue().Set(Integer::New(isolate, (uint32_t)result));
     return;
   }
+  if (cif->rtype == just_ffi_types[FFI_TYPE_DOUBLE]) {
+    args.GetReturnValue().Set(v8::Number::New(isolate, (double)result));
+    return;
+  }
   if (cif->rtype == just_ffi_types[FFI_TYPE_POINTER]) {
     args.GetReturnValue().Set(BigInt::New(isolate, (uint64_t)result));
     return;
@@ -78,6 +82,7 @@ void just::ffi::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, module, "ffiCall", FfiCall);
 
   just_ffi_types[FFI_TYPE_UINT32] = &ffi_type_uint32;
+  just_ffi_types[FFI_TYPE_DOUBLE] = &ffi_type_double;
   just_ffi_types[FFI_TYPE_POINTER] = &ffi_type_pointer;
 
   SET_VALUE(isolate, module, "FFI_UNIX64", Integer::New(isolate, FFI_UNIX64));
