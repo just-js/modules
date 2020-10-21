@@ -29,7 +29,7 @@ for (var i = 0; i < 5; i++) {
 }
 */
 
-const { ffi } = just.library('./ffi.so', 'ffi')
+const { ffi } = just.library('ffi.so', 'ffi')
 const handle = just.sys.dlopen('/usr/lib/x86_64-linux-gnu/libsqlite3.so')
 if (!handle) throw new Error('Clould not create handle')
 

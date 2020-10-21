@@ -8,7 +8,7 @@ help:
 
 ffi.so: ## build shared library
 	$(CC) -c -DSHARED -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ffi.cc
-	$(CC) -shared -flto -pthread -m64 -Wl,--start-group ffi.o -Wl,--end-group -Wl,-soname=jffi.so -lffi -o ffi.so
+	$(CC) -shared -flto -pthread -m64 -Wl,--start-group ffi.o -Wl,--end-group -Wl,-soname=ffi.so -lffi -o ffi.so
 
 ffi.a: ## build static library
 	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ffi.cc
