@@ -121,16 +121,26 @@ void just::tls::ServerContext(const FunctionCallbackInfo<Value> &args) {
   meth = TLS_server_method();
   SSL_CTX* ctx = SSL_CTX_new(meth);
   ab->SetAlignedPointerInInternalField(1, ctx);
+  int options = SSL_OP_ALL | SSL_OP_NO_RENEGOTIATION | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 | SSL_OP_NO_DTLSv1 | SSL_OP_NO_DTLSv1_2;
   int argc = args.Length();
   if (argc > 1) {
     String::Utf8Value cert(isolate, args[1]);
-    SSL_CTX_use_certificate_file(ctx, *cert, SSL_FILETYPE_PEM);
+    SSL_CTX_use_certificate_chain_file(ctx, *cert);
   }
   if (argc > 2) {
     String::Utf8Value key(isolate, args[2]);
     SSL_CTX_use_PrivateKey_file(ctx, *key, SSL_FILETYPE_PEM);
   }
-  // todo: check private key
+  if (argc > 3) {
+    Local<BigInt> i64 = Local<BigInt>::Cast(args[3]);
+    options = i64->Uint64Value();
+  }
+  SSL_CTX_set_options(ctx, options);
+  if (argc > 4) {
+    String::Utf8Value ciphers(isolate, args[4]);
+    SSL_CTX_set_cipher_list(ctx, *ciphers);
+    SSL_CTX_set_ciphersuites(ctx, *ciphers);
+  }
   args.GetReturnValue().Set(ab);
 }
 
@@ -191,6 +201,22 @@ void just::tls::Init(Isolate* isolate, Local<ObjectTemplate> target) {
     SSL_ERROR_WANT_ASYNC_JOB));
   SET_VALUE(isolate, module, "SSL_ERROR_WANT_CLIENT_HELLO_CB", 
     Integer::New(isolate, SSL_ERROR_WANT_CLIENT_HELLO_CB));
+
+  SET_VALUE(isolate, module, "SSL_OP_ALL", BigInt::New(isolate, 
+    SSL_OP_ALL));
+  SET_VALUE(isolate, module, "SSL_OP_NO_RENEGOTIATION", BigInt::New(isolate, 
+    SSL_OP_NO_RENEGOTIATION));
+  SET_VALUE(isolate, module, "SSL_OP_NO_SSLv3", BigInt::New(isolate, 
+    SSL_OP_NO_SSLv3));
+  SET_VALUE(isolate, module, "SSL_OP_NO_TLSv1", BigInt::New(isolate, 
+    SSL_OP_NO_TLSv1));
+  SET_VALUE(isolate, module, "SSL_OP_NO_TLSv1_1", BigInt::New(isolate, 
+    SSL_OP_NO_TLSv1_1));
+  SET_VALUE(isolate, module, "SSL_OP_NO_DTLSv1", BigInt::New(isolate, 
+    SSL_OP_NO_DTLSv1));
+  SET_VALUE(isolate, module, "SSL_OP_NO_DTLSv1_2", BigInt::New(isolate, 
+    SSL_OP_NO_DTLSv1_2));
+
   SET_METHOD(isolate, module, "serverContext", ServerContext);
   SET_METHOD(isolate, module, "clientContext", ClientContext);
   SET_METHOD(isolate, module, "destroyContext", DestroyContext);
