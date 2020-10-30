@@ -1,4 +1,4 @@
-#include "ffi.h"
+#include "ffi_just.h"
 
 static ffi_type* just_ffi_types[16];
 

@@ -29,7 +29,7 @@ debug: ## build shared library
 
 http.a: ## build static library
 	make picohttpparser.o
-	$(CC) -c -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/picohttpparser -I../../just -I../../just/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -Wno-unused-parameter http.cc
+	$(CC) -c -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/picohttpparser -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -Wno-unused-parameter http.cc
 	ar -crs http.a picohttpparser.o http.o
 
 clean: ## tidy up

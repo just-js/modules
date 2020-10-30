@@ -10,6 +10,8 @@ deps: ## dependencies
 	mkdir -p deps
 	curl -L -o deps/OpenSSL_1_1_1d.tar.gz https://github.com/openssl/openssl/archive/OpenSSL_1_1_1d.tar.gz
 	tar -zxvf deps/OpenSSL_1_1_1d.tar.gz -C deps/
+
+deps/openssl-OpenSSL_1_1_1d/libcrypto.a: deps
 	cd deps/openssl-OpenSSL_1_1_1d &&	CFLAGS='-fPIC' ./config --release -static no-autoload-config no-autoerrinit no-autoalginit no-afalgeng no-deprecated no-capieng no-cms no-comp no-dgram no-dynamic-engine enable-ec_nistp_64_gcc_128 no-err no-filenames no-gost no-hw-padlock no-makedepend no-multiblock no-nextprotoneg no-pic no-rfc3779 no-shared no-srp no-srtp no-static-engine no-tests threads no-ui zlib no-ssl no-tls1 no-dtls no-aria no-bf no-blake2 no-camellia no-cast no-chacha no-cmac no-des no-idea no-mdc2 no-ocb no-poly1305 no-rc2 no-scrypt no-seed no-siphash no-sm3 no-sm4 no-whirlpool
 	make -C deps/openssl-OpenSSL_1_1_1d/ clean
 	make -C deps/openssl-OpenSSL_1_1_1d/ build_generated
