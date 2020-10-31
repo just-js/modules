@@ -17,17 +17,17 @@ picohttpparser.o: deps ## compile picohttpparser lib
 picohttpparser.debug: deps ## compile picohttpparser lib
 	$(C) -fPIC -c -DV8_COMPRESS_POINTERS -Ideps/picohttpparser -g -O3 -Wall -Wextra -march=native -mtune=native -msse4 deps/picohttpparser/picohttpparser.c
 
-http.so: ## build shared library
+shared: ## build shared library
 	make picohttpparser.o
 	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/picohttpparser -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter http.cc
 	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group http.o picohttpparser.o -Wl,--end-group -Wl,-soname=http.so -o http.so
 
-debug: ## build shared library
-	make picohttpparser.debug
-	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/picohttpparser -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -g -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter http.cc
-	$(CC) -shared -flto -pthread -m64 -Wl,--start-group http.o picohttpparser.o -Wl,--end-group -Wl,-soname=http.so -o http.so
+debug-shared: ## build shared library
+	make picohttpparser.o
+	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/picohttpparser -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter http.cc
+	$(CC) -g -shared -flto -pthread -m64 -Wl,--start-group http.o picohttpparser.o -Wl,--end-group -Wl,-soname=http.so -o http.so
 
-http.a: ## build static library
+static: ## build static library
 	make picohttpparser.o
 	$(CC) -c -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/picohttpparser -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -Wno-unused-parameter http.cc
 	ar -crs http.a picohttpparser.o http.o
@@ -40,10 +40,10 @@ clean: ## tidy up
 all: ## make all
 	make clean
 	make deps
-	make http.so
-	make http.a
+	make shared
+	make static
 
-install: ## copy shared libarary to /usr/local/lib/just
+install: ## copy shared library to /usr/local/lib/just
 	sudo mkdir -p /usr/local/lib/just && sudo cp -f http.so /usr/local/lib/just/
 
 cleanall: ## tidy up dependencies

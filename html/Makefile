@@ -6,11 +6,15 @@ CC = g++
 help:
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_\.-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-html.so: ## build shared library
+shared: ## build shared library
 	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I. -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter html.cc
 	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group html.o -Wl,--end-group -Wl,-soname=html.so -o html.so
 
-http.a: ## build static library
+debug-shared: ## build debug shared library
+	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I. -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter html.cc
+	$(CC) -g -shared -flto -pthread -m64 -Wl,--start-group html.o -Wl,--end-group -Wl,-soname=html.so -o html.so
+
+static: ## build static library
 	$(CC) -c -std=c++11 -DV8_COMPRESS_POINTERS -I. -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -Wno-unused-parameter html.cc
 	ar -crs html.a html.o
 
@@ -21,10 +25,10 @@ clean: ## tidy up
 
 all: ## make all
 	make clean
-	make html.so
-	make html.a
+	make shared
+	make static
 
-install: ## copy shared libarary to /usr/local/lib/just
+install: ## copy shared library to /usr/local/lib/just
 	sudo mkdir -p /usr/local/lib/just && sudo cp -f html.so /usr/local/lib/just/
 
 cleanall: ## tidy up dependencies

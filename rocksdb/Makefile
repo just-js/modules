@@ -15,11 +15,15 @@ deps/rocksdb-6.10.2/librocksdb.a: deps ## dependencies
 	make -C deps/rocksdb-6.10.2/ clean
 	CFLAGS='-mstackrealign -fPIC -O3' make -C deps/rocksdb-6.10.2/ static_lib
 
-rocksdb.so: deps/rocksdb-6.10.2/librocksdb.a ## build shared library
+shared: deps/rocksdb-6.10.2/librocksdb.a ## build shared library
 	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/rocksdb-6.10.2/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter rocksdb.cc
 	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group rocksdb.o deps/rocksdb-6.10.2/librocksdb.a -Wl,--end-group -Wl,-soname=rocksdb.so -o rocksdb.so
 
-rocksdb.a: deps/rocksdb-6.10.2/librocksdb.a ## build static library
+debug-shared: deps/rocksdb-6.10.2/librocksdb.a ## build shared library
+	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/rocksdb-6.10.2/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter rocksdb.cc
+	$(CC) -g -shared -flto -pthread -m64 -Wl,--start-group rocksdb.o deps/rocksdb-6.10.2/librocksdb.a -Wl,--end-group -Wl,-soname=rocksdb.so -o rocksdb.so
+
+static: deps/rocksdb-6.10.2/librocksdb.a ## build static library
 	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/rocksdb-6.10.2/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter rocksdb.cc
 	ar -crsT rocksdb.a rocksdb.o deps/rocksdb-6.10.2/librocksdb.a
 
@@ -31,14 +35,14 @@ clean: ## tidy up
 all: ## make all
 	make clean
 	make deps
-	make rocksdb.so
-	make rocksdb.a
+	make shared
+	make static
 
 cleanall: ## tidy up dependencies
 	make clean
 	rm -fr deps
 
-install: ## copy shared libarary to /usr/local/lib/just
+install: ## copy shared library to /usr/local/lib/just
 	sudo mkdir -p /usr/local/lib/just && sudo cp -f rocksdb.so /usr/local/lib/just/
 
 .DEFAULT_GOAL := help

@@ -14,11 +14,15 @@ deps: ## dependencies
 	cd deps/tcc-${TCC_VERSION} && CFLAGS='-mstackrealign -fPIC -O3' ./configure && cd ../../
 	make -C deps/tcc-${TCC_VERSION}/ libtcc.a
 
-tcc.so: deps ## build shared library
+shared: deps ## build shared library
 	$(CC) -c -DSHARED -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/tcc-${TCC_VERSION} -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter tcc.cc
 	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group tcc.o deps/tcc-${TCC_VERSION}/libtcc.a -Wl,--end-group -Wl,-soname=tcc.so -o tcc.so
 
-tcc.a: deps ## build static library
+debug-shared: deps ## build shared library
+	$(CC) -c -DSHARED -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/tcc-${TCC_VERSION} -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter tcc.cc
+	$(CC) -g -shared -flto -pthread -m64 -Wl,--start-group tcc.o deps/tcc-${TCC_VERSION}/libtcc.a -Wl,--end-group -Wl,-soname=tcc.so -o tcc.so
+
+static: deps ## build static library
 	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/tcc-${TCC_VERSION} -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter tcc.cc
 	gcc-ar -crsT tcc.a tcc.o deps/tcc-${TCC_VERSION}/libtcc.a
 
@@ -30,13 +34,14 @@ clean: ## tidy up
 all: ## make all
 	make clean
 	make deps
-	make tcc.so
+	make shared
+	make static
 
 cleanall: ## tidy up dependencies
 	make clean
 	rm -fr deps
 
-install: ## copy shared libarary to /usr/local/lib/just
+install: ## copy shared library to /usr/local/lib/just
 	sudo mkdir -p /usr/local/lib/just && sudo cp -f tcc.so /usr/local/lib/just/
 
 .DEFAULT_GOAL := help

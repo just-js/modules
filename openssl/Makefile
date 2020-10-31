@@ -17,12 +17,17 @@ deps/openssl-OpenSSL_1_1_1d/libcrypto.a: deps
 	make -C deps/openssl-OpenSSL_1_1_1d/ build_generated
 	make -C deps/openssl-OpenSSL_1_1_1d/ libcrypto.a libssl.a
 
-openssl.so: deps/openssl-OpenSSL_1_1_1d/libcrypto.a deps/openssl-OpenSSL_1_1_1d/libssl.a ## build shared library
+shared: deps/openssl-OpenSSL_1_1_1d/libcrypto.a deps/openssl-OpenSSL_1_1_1d/libssl.a ## build shared library
 	$(CC) -c -DSHARED -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/openssl-OpenSSL_1_1_1d/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter crypto.cc
 	$(CC) -c -DSHARED -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/openssl-OpenSSL_1_1_1d/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter tls.cc
 	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group crypto.o tls.o deps/openssl-OpenSSL_1_1_1d/libcrypto.a deps/openssl-OpenSSL_1_1_1d/libssl.a -Wl,--end-group -Wl,-soname=openssl.so -o openssl.so
 
-openssl.a: deps/openssl-OpenSSL_1_1_1d/libcrypto.a deps/openssl-OpenSSL_1_1_1d/libssl.a ## build shared library
+debug-shared: deps/openssl-OpenSSL_1_1_1d/libcrypto.a deps/openssl-OpenSSL_1_1_1d/libssl.a ## build shared library
+	$(CC) -c -DSHARED -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/openssl-OpenSSL_1_1_1d/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter crypto.cc
+	$(CC) -c -DSHARED -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/openssl-OpenSSL_1_1_1d/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter tls.cc
+	$(CC) -g -shared -flto -pthread -m64 -Wl,--start-group crypto.o tls.o deps/openssl-OpenSSL_1_1_1d/libcrypto.a deps/openssl-OpenSSL_1_1_1d/libssl.a -Wl,--end-group -Wl,-soname=openssl.so -o openssl.so
+
+static: deps/openssl-OpenSSL_1_1_1d/libcrypto.a deps/openssl-OpenSSL_1_1_1d/libssl.a ## build shared library
 	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/openssl-OpenSSL_1_1_1d/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter crypto.cc
 	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/openssl-OpenSSL_1_1_1d/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter tls.cc
 	ar -crsT openssl.a tls.o crypto.o deps/openssl-OpenSSL_1_1_1d/libcrypto.a deps/openssl-OpenSSL_1_1_1d/libssl.a
@@ -35,9 +40,10 @@ clean: ## tidy up
 all: ## make all
 	make clean
 	make deps
-	make openssl.so
+	make shared
+	make static
 
-install: ## copy shared libarary to /usr/local/lib/just
+install: ## copy shared library to /usr/local/lib/just
 	sudo mkdir -p /usr/local/lib/just && sudo cp -f openssl.so /usr/local/lib/just/
 
 cleanall: ## tidy up dependencies

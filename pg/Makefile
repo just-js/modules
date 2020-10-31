@@ -17,11 +17,15 @@ deps/postgresql-12.3/src/interfaces/libpq/libpq.a: deps
 	cd deps/postgresql-12.3 && make -C src/include
 	cd deps/postgresql-12.3 && make -C src/interfaces
 
-pg.so: deps/postgresql-12.3/src/interfaces/libpq/libpq.a ## build shared library
+shared: deps/postgresql-12.3/src/interfaces/libpq/libpq.a ## build shared library
 	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/postgresql-12.3/src/include -Ideps/postgresql-12.3/src -Ideps/postgresql-12.3/src/interfaces/libpq -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter pg.cc
 	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group deps/postgresql-12.3/src/interfaces/libpq/libpq.a deps/postgresql-12.3/src/port/libpgport_shlib.a deps/postgresql-12.3/src/common/libpgcommon_shlib.a pg.o -Wl,--end-group -Wl,-soname=pg.so -o pg.so
 
-pg.a: deps/postgresql-12.3/src/interfaces/libpq/libpq.a ## build shared library
+debug-shared: deps/postgresql-12.3/src/interfaces/libpq/libpq.a ## build shared library
+	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/postgresql-12.3/src/include -Ideps/postgresql-12.3/src -Ideps/postgresql-12.3/src/interfaces/libpq -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter pg.cc
+	$(CC) -g -shared -flto -pthread -m64 -Wl,--start-group deps/postgresql-12.3/src/interfaces/libpq/libpq.a deps/postgresql-12.3/src/port/libpgport_shlib.a deps/postgresql-12.3/src/common/libpgcommon_shlib.a pg.o -Wl,--end-group -Wl,-soname=pg.so -o pg.so
+
+static: deps/postgresql-12.3/src/interfaces/libpq/libpq.a ## build shared library
 	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/postgresql-12.3/src/include -Ideps/postgresql-12.3/src -Ideps/postgresql-12.3/src/interfaces/libpq -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter pg.cc
 	ar -crsT pg.a pg.o deps/postgresql-12.3/src/interfaces/libpq/libpq.a deps/postgresql-12.3/src/port/libpgport_shlib.a deps/postgresql-12.3/src/common/libpgcommon_shlib.a pg.o
 
@@ -33,10 +37,10 @@ clean: ## tidy up
 all: ## make all
 	make clean
 	make deps
-	make pg.so
-	make pg.a
+	make shared
+	make static
 
-install: ## copy shared libarary to /usr/local/lib/just
+install: ## copy shared library to /usr/local/lib/just
 	sudo mkdir -p /usr/local/lib/just && sudo cp -f pg.so /usr/local/lib/just/
 
 cleanall: ## tidy up dependencies
