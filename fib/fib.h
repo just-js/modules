@@ -7,7 +7,7 @@ namespace just {
 
 namespace fib {
 
-void Fib(const FunctionCallbackInfo<Value> &args);
+void Fibonacci(const FunctionCallbackInfo<Value> &args);
 void Init(Isolate* isolate, Local<ObjectTemplate> target);
 
 }

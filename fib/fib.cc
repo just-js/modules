@@ -5,7 +5,7 @@ uint32_t fibonacci(uint32_t n) {
   return fibonacci(n-1) + fibonacci(n-2);
 }
 
-void just::fib::Fib(const FunctionCallbackInfo<Value> &args) {
+void just::fib::Fibonacci(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();  
@@ -14,6 +14,6 @@ void just::fib::Fib(const FunctionCallbackInfo<Value> &args) {
 
 void just::fib::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> module = ObjectTemplate::New(isolate);
-  SET_METHOD(isolate, module, "fib", Fib);
+  SET_METHOD(isolate, module, "calculate", Fibonacci);
   SET_MODULE(isolate, target, "fib", module);
 }
