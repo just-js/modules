@@ -1,6 +1,7 @@
 C=gcc
 CC=g++
 ZLIB_VERSION=1.2.11
+LIBS=/usr/local/lib/just
 
 .PHONY: help clean
 
@@ -42,7 +43,7 @@ cleanall: ## tidy up dependencies
 	make clean
 	rm -fr deps
 
-install: ## copy shared library to /usr/local/lib/just
-	sudo mkdir -p /usr/local/lib/just && sudo cp -f zlib.so /usr/local/lib/just/
+install: ## copy shared library to $INSTALL
+	mkdir -p ${LIBS} && cp -f zlib.so ${LIBS}
 
 .DEFAULT_GOAL := help

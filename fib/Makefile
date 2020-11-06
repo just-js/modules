@@ -1,5 +1,6 @@
 C=gcc
 CC=g++
+LIBS=/usr/local/lib/just
 
 .PHONY: help clean
 
@@ -31,7 +32,7 @@ all: ## make all
 cleanall: ## tidy up dependencies
 	make clean
 
-install: ## copy shared library to /usr/local/lib/just
-	sudo mkdir -p /usr/local/lib/just && sudo cp -f fib.so /usr/local/lib/just/
+install: ## copy shared library to $INSTALL
+	mkdir -p ${LIBS} && cp -f fib.so ${LIBS}
 
 .DEFAULT_GOAL := help

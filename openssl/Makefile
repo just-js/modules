@@ -1,5 +1,6 @@
 C = gcc
 CC = g++
+LIBS=/usr/local/lib/just
 
 .PHONY: help clean
 
@@ -43,8 +44,8 @@ all: ## make all
 	make shared
 	make static
 
-install: ## copy shared library to /usr/local/lib/just
-	sudo mkdir -p /usr/local/lib/just && sudo cp -f openssl.so /usr/local/lib/just/
+install: ## copy shared library to $INSTALL
+	mkdir -p ${LIBS} && cp -f openssl.so ${LIBS}
 
 cleanall: ## tidy up dependencies
 	make clean

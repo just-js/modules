@@ -1,5 +1,6 @@
 C = gcc
 CC = g++
+LIBS=/usr/local/lib/just
 
 .PHONY: help clean
 
@@ -42,7 +43,7 @@ cleanall: ## tidy up dependencies
 	make clean
 	rm -fr deps
 
-install: ## copy shared library to /usr/local/lib/just
-	sudo mkdir -p /usr/local/lib/just && sudo cp -f rocksdb.so /usr/local/lib/just/
+install: ## copy shared library to $INSTALL
+	mkdir -p ${LIBS} && cp -f rocksdb.so ${LIBS}
 
 .DEFAULT_GOAL := help
