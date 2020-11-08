@@ -16,11 +16,11 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target);
 }
 
 }
-#ifdef SHARED
+
 extern "C" {
 	void* _register_ffi() {
 		return (void*)just::ffi::Init;
 	}
 }
-#endif
+
 #endif

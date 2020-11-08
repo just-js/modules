@@ -31,11 +31,10 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target);
 }
 }
 
-#ifdef SHARED
 extern "C" {
 	void* _register_tls() {
 		return (void*)just::tls::Init;
 	}
 }
-#endif
+
 #endif

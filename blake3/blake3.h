@@ -17,11 +17,11 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target);
 }
 
 }
-#ifdef SHARED
+
 extern "C" {
 	void* _register_blake3() {
 		return (void*)just::blake3::Init;
 	}
 }
-#endif
+
 #endif

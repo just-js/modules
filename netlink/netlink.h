@@ -17,11 +17,11 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target);
 }
 
 }
-#ifdef SHARED
+
 extern "C" {
 	void* _register_netlink() {
 		return (void*)just::netlink::Init;
 	}
 }
-#endif
+
 #endif

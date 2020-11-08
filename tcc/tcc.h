@@ -18,11 +18,11 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target);
 }
 
 }
-#ifdef SHARED
+
 extern "C" {
 	void* _register_tcc() {
 		return (void*)just::tcc::Init;
 	}
 }
-#endif
+
 #endif

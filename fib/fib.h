@@ -13,11 +13,11 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target);
 }
 
 }
-#ifdef SHARED
+
 extern "C" {
 	void* _register_fib() {
 		return (void*)just::fib::Init;
 	}
 }
-#endif
+
 #endif

@@ -28,7 +28,7 @@ debug-shared: deps/postgresql-12.3/src/interfaces/libpq/libpq.a ## build shared 
 
 static: deps/postgresql-12.3/src/interfaces/libpq/libpq.a ## build shared library
 	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/postgresql-12.3/src/include -Ideps/postgresql-12.3/src -Ideps/postgresql-12.3/src/interfaces/libpq -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter pg.cc
-	ar -crsT pg.a pg.o deps/postgresql-12.3/src/interfaces/libpq/libpq.a deps/postgresql-12.3/src/port/libpgport_shlib.a deps/postgresql-12.3/src/common/libpgcommon_shlib.a pg.o
+	ar -crsT pg.a pg.o deps/postgresql-12.3/src/interfaces/libpq/libpq.a deps/postgresql-12.3/src/port/libpgport_shlib.a deps/postgresql-12.3/src/common/libpgcommon_shlib.a
 
 clean: ## tidy up
 	rm -f *.o
