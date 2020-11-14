@@ -1,6 +1,7 @@
 C = gcc
 CC = g++
 LIBS=/usr/local/lib/just
+MODULE=http
 
 .PHONY: help clean
 
@@ -18,34 +19,27 @@ picohttpparser.o: deps ## compile picohttpparser lib
 picohttpparser.debug: deps ## compile picohttpparser lib
 	$(C) -fPIC -c -DV8_COMPRESS_POINTERS -Ideps/picohttpparser -g -O3 -Wall -Wextra -march=native -mtune=native -msse4 deps/picohttpparser/picohttpparser.c
 
-shared: ## build shared library
+library: ## build shared library
 	make picohttpparser.o
-	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/picohttpparser -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter http.cc
-	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group http.o picohttpparser.o -Wl,--end-group -Wl,-soname=http.so -o http.so
+	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/picohttpparser -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
+	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group ${MODULE}.o picohttpparser.o -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
 
-debug-shared: ## build shared library
+library-debug: ## build shared library
 	make picohttpparser.o
-	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/picohttpparser -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter http.cc
-	$(CC) -g -shared -flto -pthread -m64 -Wl,--start-group http.o picohttpparser.o -Wl,--end-group -Wl,-soname=http.so -o http.so
-
-static: ## build static library
-	make picohttpparser.o
-	$(CC) -c -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/picohttpparser -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -Wno-unused-parameter http.cc
-	ar -crs http.a picohttpparser.o http.o
+	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/picohttpparser -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
+	$(CC) -g -shared -flto -pthread -m64 -Wl,--start-group ${MODULE}.o picohttpparser.o -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
 
 clean: ## tidy up
 	rm -f *.o
 	rm -f *.so
-	rm -f *.a
 
 all: ## make all
 	make clean
 	make deps
-	make shared
-	make static
+	make library
 
 install: ## copy shared library to $INSTALL
-	mkdir -p ${LIBS} && cp -f http.so ${LIBS}
+	mkdir -p ${LIBS} && cp -f ${MODULE}.so ${LIBS}
 
 cleanall: ## tidy up dependencies
 	make clean

@@ -2,6 +2,7 @@ C=gcc
 CC=g++
 ZLIB_VERSION=1.2.11
 LIBS=/usr/local/lib/just
+MODULE=zlib
 
 .PHONY: help clean
 
@@ -16,34 +17,28 @@ deps: ## dependencies
 	cd deps/zlib-$(ZLIB_VERSION) && CFLAGS='-mstackrealign -fPIC -O3' ./configure --static && cd ../../
 	make -C deps/zlib-$(ZLIB_VERSION)/
 
-shared: deps ## build shared library
-	$(CC) -c -DSHARED -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/zlib-$(ZLIB_VERSION) -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter zlib.cc
-	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group zlib.o deps/zlib-$(ZLIB_VERSION)/libz.a -Wl,--end-group -Wl,-soname=zlib.so -o zlib.so
+library: deps ## build shared library
+	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/zlib-$(ZLIB_VERSION) -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
+	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group ${MODULE}.o deps/zlib-$(ZLIB_VERSION)/libz.a -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
 
-debug-shared: deps ## build shared library
-	$(CC) -c -DSHARED -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/zlib-$(ZLIB_VERSION) -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter zlib.cc
-	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group zlib.o deps/zlib-$(ZLIB_VERSION)/libz.a -Wl,--end-group -Wl,-soname=zlib.so -o zlib.so
-
-static: deps ## build static library
-	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/zlib-$(ZLIB_VERSION) -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter zlib.cc
-	gcc-ar -crsT zlib.a zlib.o deps/zlib-$(ZLIB_VERSION)/libz.a
+library-debug: deps ## build shared library
+	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/zlib-$(ZLIB_VERSION) -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
+	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group ${MODULE}.o deps/zlib-$(ZLIB_VERSION)/libz.a -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
 
 clean: ## tidy up
 	rm -f *.o
 	rm -f *.so
-	rm -f *.a
 
 all: ## make all
 	make clean
 	make deps
-	make shared
-	make static
+	make library
 
 cleanall: ## tidy up dependencies
 	make clean
 	rm -fr deps
 
 install: ## copy shared library to $INSTALL
-	mkdir -p ${LIBS} && cp -f zlib.so ${LIBS}
+	mkdir -p ${LIBS} && cp -f ${MODULE}.so ${LIBS}
 
 .DEFAULT_GOAL := help
