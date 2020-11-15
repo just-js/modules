@@ -2,8 +2,7 @@
 
 void* just::thread::startThread(void *data) {
   threadContext* ctx = (threadContext*)data;
-  uint64_t start = just::hrtime();
-  just::CreateIsolate(ctx->argc, ctx->argv, start, ctx->main, 
+  just::CreateIsolate(ctx->argc, ctx->argv, ctx->main, 
     ctx->main_len, ctx->source, ctx->source_len, &ctx->buf, ctx->fd);
   free(ctx->source);
   free(ctx);
@@ -22,11 +21,17 @@ void just::thread::Spawn(const FunctionCallbackInfo<Value> &args) {
 	ctx->source = (char*)calloc(1, source.length());
   memcpy(ctx->source, *source, source.length());
   ctx->source_len = source.length();
+
+  String::Utf8Value main(isolate, args[1]);
+	ctx->main = (char*)calloc(1, main.length());
+  memcpy(ctx->main, *main, main.length());
+  ctx->main_len = main.length();
+
   ctx->buf.iov_len = 0;
   ctx->fd = 0;
   // we can pass in a set of args for just.args
-  if (argc > 1) {
-    Local<Array> arguments = args[1].As<Array>();
+  if (argc > 2) {
+    Local<Array> arguments = args[2].As<Array>();
     int len = arguments->Length();
     ctx->argc = len;
     ctx->argv = (char**)calloc(len + 1, sizeof(char*));
@@ -45,19 +50,19 @@ void just::thread::Spawn(const FunctionCallbackInfo<Value> &args) {
     ctx->argv[1] = NULL;
   }
   // shared array buffer. will be in just.buffer variable inside thread
-  if (argc > 2) {
-    Local<SharedArrayBuffer> ab = args[2].As<SharedArrayBuffer>();
+  if (argc > 3) {
+    Local<SharedArrayBuffer> ab = args[3].As<SharedArrayBuffer>();
     std::shared_ptr<BackingStore> backing = ab->GetBackingStore();
     ctx->buf.iov_base = backing->Data();
     ctx->buf.iov_len = backing->ByteLength();
   }
   // socketpair fd for IPC
-  if (argc > 3) {
-    ctx->fd = args[3]->Int32Value(context).ToChecked();
+  if (argc > 4) {
+    ctx->fd = args[4]->Int32Value(context).ToChecked();
   }
   // overwrite arg[0] with thread name or passed in name for thread
-  if (argc > 4) {
-    String::Utf8Value name(isolate, args[4]);
+  if (argc > 5) {
+    String::Utf8Value name(isolate, args[5]);
     ctx->argv[0] = (char*)calloc(1, name.length());
     memcpy(ctx->argv[0], *name, name.length());
   } else {
@@ -133,10 +138,8 @@ void just::thread::GetAffinity(const FunctionCallbackInfo<Value> &args) {
   Local<BigInt> bi = args[0]->ToBigInt(context).ToLocalChecked();
   bool lossless = true;
   pthread_t tid = (pthread_t)bi->Uint64Value(&lossless);
-  int cpu = args[1]->Int32Value(context).ToChecked();
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
-  CPU_SET(cpu, &cpuset);
   int r = pthread_getaffinity_np(tid, sizeof(cpu_set_t), &cpuset);
   if (r != 0) {
     args.GetReturnValue().Set(Integer::New(isolate, r));

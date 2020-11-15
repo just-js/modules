@@ -237,10 +237,11 @@ void just::sys::MemoryUsage(const FunctionCallbackInfo<Value> &args) {
   ssize_t rss = process_memory_usage();
   HeapStatistics v8_heap_stats;
   isolate->GetHeapStatistics(&v8_heap_stats);
-  Local<Float64Array> array = args[0].As<Float64Array>();
+  Local<BigUint64Array> array = args[0].As<BigUint64Array>();
   Local<ArrayBuffer> ab = array->Buffer();
   std::shared_ptr<BackingStore> backing = ab->GetBackingStore();
-  double *fields = static_cast<double *>(backing->Data());
+  // todo: why is this double?
+  uint64_t *fields = static_cast<uint64_t *>(backing->Data());
   fields[0] = rss;
   fields[1] = v8_heap_stats.total_heap_size();
   fields[2] = v8_heap_stats.used_heap_size();
