@@ -125,6 +125,9 @@ err:
   return 0;
 }
 
+ssize_t process_memory_usage();
+uint64_t hrtime();
+
 void WaitPID(const FunctionCallbackInfo<Value> &args);
 void Spawn(const FunctionCallbackInfo<Value> &args);
 void HRTime(const FunctionCallbackInfo<Value> &args);

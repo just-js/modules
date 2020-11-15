@@ -1,5 +1,13 @@
 #include "sys.h"
 
+uint64_t just::sys::hrtime() {
+  struct timespec t;
+  clock_t clock_id = CLOCK_MONOTONIC;
+  if (clock_gettime(clock_id, &t))
+    return 0;
+  return t.tv_sec * (uint64_t) 1e9 + t.tv_nsec;
+}
+
 void just::sys::WaitPID(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -36,9 +44,9 @@ void just::sys::Spawn(const FunctionCallbackInfo<Value> &args) {
   for (int i = 0; i < len; i++) {
     Local<String> val = 
       arguments->Get(context, i).ToLocalChecked().As<v8::String>();
-    argv[i + 1] = (char*)calloc(1, val->Length());
-    val->WriteUtf8(isolate, argv[i + 1], val->Length(), &written, 
-      v8::String::HINT_MANY_WRITES_EXPECTED | v8::String::NO_NULL_TERMINATION);
+    argv[i + 1] = (char*)calloc(1, val->Length() + 1);
+    val->WriteUtf8(isolate, argv[i + 1], val->Length() + 1, &written, 
+      v8::String::HINT_MANY_WRITES_EXPECTED);
   }
   argv[len + 1] = NULL;
   pid_t pid = fork();
@@ -86,7 +94,7 @@ void just::sys::HRTime(const FunctionCallbackInfo<Value> &args) {
   Local<ArrayBuffer> ab = b64->Buffer();
   std::shared_ptr<BackingStore> backing = ab->GetBackingStore();
   uint64_t *fields = static_cast<uint64_t *>(backing->Data());
-  fields[0] = hrtime();
+  fields[0] = just::sys::hrtime();
   args.GetReturnValue().Set(b64);
 }
 
