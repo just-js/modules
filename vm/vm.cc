@@ -119,10 +119,24 @@ void just::vm::RunScript(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(result.ToLocalChecked());
 }
 
+void just::vm::Builtin(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  String::Utf8Value name(isolate, args[0]);
+  builtin* b = builtins[*name];
+  if (b == nullptr) {
+    args.GetReturnValue().Set(Null(isolate));
+    return;
+  }
+  args.GetReturnValue().Set(String::NewFromUtf8(isolate, b->source, 
+    NewStringType::kNormal, b->size).ToLocalChecked());
+}
+
 void just::vm::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> vm = ObjectTemplate::New(isolate);
   SET_METHOD(isolate, vm, "compile", just::vm::CompileScript);
   SET_METHOD(isolate, vm, "runModule", just::vm::RunModule);
   SET_METHOD(isolate, vm, "runScript", just::vm::RunScript);
+  SET_METHOD(isolate, vm, "builtin", just::vm::Builtin);
   SET_MODULE(isolate, target, "vm", vm);
 }

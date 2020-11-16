@@ -690,6 +690,66 @@ void just::sys::MUnmap(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, r));
 }
 
+void just::sys::DLOpen(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Context> context = isolate->GetCurrentContext();
+  int argc = args.Length();
+  int mode = RTLD_LAZY;
+  void* handle;
+  if (argc > 1) {
+    mode = args[1]->Int32Value(context).ToChecked();
+  }
+  if (argc > 0) {
+    String::Utf8Value path(isolate, args[0]);
+    handle = dlopen(*path, mode);
+    //if (handle == NULL) handle = dlopen(NULL, mode);
+  } else {
+    handle = dlopen(NULL, mode);
+  }
+  if (handle == NULL) {
+    args.GetReturnValue().Set(v8::Null(isolate));
+    return;
+  }
+  args.GetReturnValue().Set(BigInt::New(isolate, (uint64_t)handle));
+}
+
+void just::sys::DLSym(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<BigInt> address64 = Local<BigInt>::Cast(args[0]);
+  // todo: this is very dangerous. need to have a think on how best to do this
+  void* handle = reinterpret_cast<void*>(address64->Uint64Value());
+  String::Utf8Value name(isolate, args[1]);
+  void* ptr = dlsym(handle, *name);
+  if (ptr == NULL) {
+    args.GetReturnValue().Set(v8::Null(isolate));
+    return;
+  }
+  args.GetReturnValue().Set(BigInt::New(isolate, (uint64_t)ptr));
+}
+
+void just::sys::DLError(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  char* err = dlerror();
+  if (err == NULL) {
+    args.GetReturnValue().Set(v8::Null(isolate));
+    return;
+  }
+  args.GetReturnValue().Set(String::NewFromUtf8(isolate, err, 
+    NewStringType::kNormal).ToLocalChecked());
+}
+
+void just::sys::DLClose(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<BigInt> address64 = Local<BigInt>::Cast(args[0]);
+  void* handle = reinterpret_cast<void*>(address64->Uint64Value());
+  int r = dlclose(handle);
+  args.GetReturnValue().Set(Integer::New(isolate, r));
+}
+
 void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> sys = ObjectTemplate::New(isolate);
   SET_METHOD(isolate, sys, "calloc", Calloc);
@@ -726,6 +786,13 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, sys, "nanosleep", NanoSleep);
   SET_METHOD(isolate, sys, "mmap", MMap);
   SET_METHOD(isolate, sys, "munmap", MUnmap);
+  SET_METHOD(isolate, sys, "dlopen", DLOpen);
+  SET_METHOD(isolate, sys, "dlsym", DLSym);
+  SET_METHOD(isolate, sys, "dlerror", DLError);
+  SET_METHOD(isolate, sys, "dlclose", DLClose);
+  SET_VALUE(isolate, sys, "RTLD_LAZY", Integer::New(isolate, RTLD_LAZY));
+  SET_VALUE(isolate, sys, "RTLD_NOW", Integer::New(isolate, RTLD_NOW));
+
   //SET_METHOD(isolate, sys, "shmOpen", ShmOpen);
   //SET_METHOD(isolate, sys, "shmUnlink", ShmUnlink);  
   SET_VALUE(isolate, sys, "CLOCK_MONOTONIC", Integer::New(isolate, 

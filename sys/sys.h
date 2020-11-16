@@ -7,6 +7,7 @@
 #include <sys/resource.h>
 #include <limits.h>
 #include <sys/timerfd.h>
+#include <dlfcn.h>
 
 namespace just {
 
@@ -162,6 +163,10 @@ void AvailablePages(const FunctionCallbackInfo<Value> &args);
 void ReadMemory(const FunctionCallbackInfo<Value> &args);
 void MMap(const FunctionCallbackInfo<Value> &args);
 void MUnmap(const FunctionCallbackInfo<Value> &args);
+void DLOpen(const FunctionCallbackInfo<Value> &args);
+void DLSym(const FunctionCallbackInfo<Value> &args);
+void DLClose(const FunctionCallbackInfo<Value> &args);
+void DLError(const FunctionCallbackInfo<Value> &args);
 //void ShmOpen(const FunctionCallbackInfo<Value> &args);
 //void ShmUnlink(const FunctionCallbackInfo<Value> &args);
 
