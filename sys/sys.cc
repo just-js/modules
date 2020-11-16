@@ -623,7 +623,7 @@ void just::sys::ReadMemory(const FunctionCallbackInfo<Value> &args) {
       ArrayBuffer::New(isolate, std::move(backing));
   args.GetReturnValue().Set(ab);
 }
-
+/*
 void just::sys::ShmOpen(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -647,7 +647,7 @@ void just::sys::ShmUnlink(const FunctionCallbackInfo<Value> &args) {
   String::Utf8Value name(isolate, args[0]);
   args.GetReturnValue().Set(Integer::New(isolate, shm_unlink(*name)));
 }
-
+*/
 void just::sys::MMap(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -726,8 +726,8 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, sys, "nanosleep", NanoSleep);
   SET_METHOD(isolate, sys, "mmap", MMap);
   SET_METHOD(isolate, sys, "munmap", MUnmap);
-  SET_METHOD(isolate, sys, "shmOpen", ShmOpen);
-  SET_METHOD(isolate, sys, "shmUnlink", ShmUnlink);  
+  //SET_METHOD(isolate, sys, "shmOpen", ShmOpen);
+  //SET_METHOD(isolate, sys, "shmUnlink", ShmUnlink);  
   SET_VALUE(isolate, sys, "CLOCK_MONOTONIC", Integer::New(isolate, 
     CLOCK_MONOTONIC));
   SET_VALUE(isolate, sys, "TFD_NONBLOCK", Integer::New(isolate, 

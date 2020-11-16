@@ -162,8 +162,8 @@ void AvailablePages(const FunctionCallbackInfo<Value> &args);
 void ReadMemory(const FunctionCallbackInfo<Value> &args);
 void MMap(const FunctionCallbackInfo<Value> &args);
 void MUnmap(const FunctionCallbackInfo<Value> &args);
-void ShmOpen(const FunctionCallbackInfo<Value> &args);
-void ShmUnlink(const FunctionCallbackInfo<Value> &args);
+//void ShmOpen(const FunctionCallbackInfo<Value> &args);
+//void ShmUnlink(const FunctionCallbackInfo<Value> &args);
 
 void Init(Isolate* isolate, Local<ObjectTemplate> target);
 }
