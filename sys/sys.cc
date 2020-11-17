@@ -821,10 +821,10 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, sys, "PROT_WRITE", Integer::New(isolate, PROT_WRITE));
   SET_VALUE(isolate, sys, "MAP_SHARED", Integer::New(isolate, MAP_SHARED));
   SET_VALUE(isolate, sys, "MAP_ANONYMOUS", Integer::New(isolate, MAP_ANONYMOUS));
-  SET_VALUE(isolate, sys, "BYTE_ORDER", Integer::New(isolate, __BYTE_ORDER));
-  SET_VALUE(isolate, sys, "LITTLE_ENDIAN", Integer::New(isolate, __LITTLE_ENDIAN));
-  SET_VALUE(isolate, sys, "BIG_ENDIAN", Integer::New(isolate, __BIG_ENDIAN));
-
+// These don't work on alpine. will have to investigate why not
+//  SET_VALUE(isolate, sys, "BYTE_ORDER", Integer::New(isolate, __BYTE_ORDER));
+//  SET_VALUE(isolate, sys, "LITTLE_ENDIAN", Integer::New(isolate, __LITTLE_ENDIAN));
+//  SET_VALUE(isolate, sys, "BIG_ENDIAN", Integer::New(isolate, __BIG_ENDIAN));
   long cpus = sysconf(_SC_NPROCESSORS_ONLN);
   long physical_pages = sysconf(_SC_PHYS_PAGES);
   long page_size = sysconf(_SC_PAGESIZE);
