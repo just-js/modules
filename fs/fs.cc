@@ -83,6 +83,13 @@ void just::fs::Fstat(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, rc));
 }
 
+void just::fs::Chdir(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  String::Utf8Value path(isolate, args[0]);
+  args.GetReturnValue().Set(Integer::New(isolate, chdir(*path)));
+}
+
 void just::fs::Rmdir(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -177,6 +184,8 @@ void just::fs::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, fs, "fstat", just::fs::Fstat);
   SET_METHOD(isolate, fs, "lseek", just::fs::Lseek);
   SET_METHOD(isolate, fs, "readdir", just::fs::Readdir);
+  SET_METHOD(isolate, fs, "chdir", just::fs::Chdir);
+
   // todo: move fcntl here
 
   SET_VALUE(isolate, fs, "O_RDONLY", Integer::New(isolate, O_RDONLY));

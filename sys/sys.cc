@@ -690,6 +690,7 @@ void just::sys::MUnmap(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, r));
 }
 
+#ifndef STATIC
 void just::sys::DLOpen(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -749,6 +750,7 @@ void just::sys::DLClose(const FunctionCallbackInfo<Value> &args) {
   int r = dlclose(handle);
   args.GetReturnValue().Set(Integer::New(isolate, r));
 }
+#endif
 
 void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> sys = ObjectTemplate::New(isolate);
@@ -786,12 +788,14 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, sys, "nanosleep", NanoSleep);
   SET_METHOD(isolate, sys, "mmap", MMap);
   SET_METHOD(isolate, sys, "munmap", MUnmap);
+#ifndef STATIC
   SET_METHOD(isolate, sys, "dlopen", DLOpen);
   SET_METHOD(isolate, sys, "dlsym", DLSym);
   SET_METHOD(isolate, sys, "dlerror", DLError);
   SET_METHOD(isolate, sys, "dlclose", DLClose);
   SET_VALUE(isolate, sys, "RTLD_LAZY", Integer::New(isolate, RTLD_LAZY));
   SET_VALUE(isolate, sys, "RTLD_NOW", Integer::New(isolate, RTLD_NOW));
+#endif
 
   //SET_METHOD(isolate, sys, "shmOpen", ShmOpen);
   //SET_METHOD(isolate, sys, "shmUnlink", ShmUnlink);  
