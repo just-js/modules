@@ -37,7 +37,7 @@ void just::vm::EnterContext(const FunctionCallbackInfo<Value> &args) {
   context->Enter();
 }
 
-void just::vm::RunInContext(const FunctionCallbackInfo<Value> &args) {
+void just::vm::CompileInContext(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
@@ -64,6 +64,53 @@ void just::vm::RunInContext(const FunctionCallbackInfo<Value> &args) {
     }
     return;
   }
+  v8::Persistent<Script, v8::CopyablePersistentTraits<Script>> pScript(isolate, script);
+  handle->script = pScript;
+}
+
+void just::vm::CompileAndRunInContext(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
+  v8_context* handle = (v8_context*)ab->GetAlignedPointerFromInternalField(1);
+  Local<Context> context = handle->context.Get(isolate);
+  TryCatch try_catch(isolate);
+  Local<String> source = args[1].As<String>();
+  Local<String> path = args[2].As<String>();
+  ScriptOrigin baseorigin(path, // resource name
+    Integer::New(isolate, 0), // line offset
+    Integer::New(isolate, 0),  // column offset
+    False(isolate), // is shared cross-origin
+    Local<Integer>(),  // script id
+    Local<Value>(), // source map url
+    False(isolate), // is opaque
+    False(isolate), // is wasm
+    False(isolate)); // is module
+  Local<Script> script;
+  ScriptCompiler::Source basescript(source, baseorigin);
+  bool ok = ScriptCompiler::Compile(context, &basescript).ToLocal(&script);
+  if (!ok) {
+    if (try_catch.HasCaught() && !try_catch.HasTerminated()) {
+      try_catch.ReThrow();
+    }
+    return;
+  }
+  MaybeLocal<Value> result = script->Run(context);
+  if (try_catch.HasCaught() && !try_catch.HasTerminated()) {
+    try_catch.ReThrow();
+    return;
+  }
+  args.GetReturnValue().Set(result.ToLocalChecked());
+}
+
+void just::vm::RunInContext(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
+  v8_context* handle = (v8_context*)ab->GetAlignedPointerFromInternalField(1);
+  Local<Context> context = handle->context.Get(isolate);
+  Local<Script> script = handle->script.Get(isolate);
+  TryCatch try_catch(isolate);
   MaybeLocal<Value> result = script->Run(context);
   if (try_catch.HasCaught() && !try_catch.HasTerminated()) {
     try_catch.ReThrow();
@@ -197,6 +244,8 @@ void just::vm::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, vm, "runModule", just::vm::RunModule);
   SET_METHOD(isolate, vm, "runScript", just::vm::RunScript);
   SET_METHOD(isolate, vm, "runInContext", just::vm::RunInContext);
+  SET_METHOD(isolate, vm, "compileInContext", just::vm::CompileInContext);
+  SET_METHOD(isolate, vm, "compileAndRunInContext", just::vm::CompileAndRunInContext);
   SET_METHOD(isolate, vm, "createContext", just::vm::CreateContext);
   SET_METHOD(isolate, vm, "enterContext", just::vm::EnterContext);
   SET_MODULE(isolate, target, "vm", vm);
