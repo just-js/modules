@@ -20,6 +20,7 @@ void RunInContext(const FunctionCallbackInfo<Value> &args);
 void CompileInContext(const FunctionCallbackInfo<Value> &args);
 void CompileAndRunInContext(const FunctionCallbackInfo<Value> &args);
 void EnterContext(const FunctionCallbackInfo<Value> &args);
+void ExitContext(const FunctionCallbackInfo<Value> &args);
 
 void Init(Isolate* isolate, Local<ObjectTemplate> target);
 }
