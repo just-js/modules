@@ -37,6 +37,15 @@ void just::vm::EnterContext(const FunctionCallbackInfo<Value> &args) {
   context->Enter();
 }
 
+void just::vm::ExitContext(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
+  v8_context* handle = (v8_context*)ab->GetAlignedPointerFromInternalField(1);
+  Local<Context> context = handle->context.Get(isolate);
+  context->Exit();
+}
+
 void just::vm::CompileInContext(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -248,5 +257,6 @@ void just::vm::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, vm, "compileAndRunInContext", just::vm::CompileAndRunInContext);
   SET_METHOD(isolate, vm, "createContext", just::vm::CreateContext);
   SET_METHOD(isolate, vm, "enterContext", just::vm::EnterContext);
+  SET_METHOD(isolate, vm, "exitContext", just::vm::ExitContext);
   SET_MODULE(isolate, target, "vm", vm);
 }
