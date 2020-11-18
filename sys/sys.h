@@ -89,7 +89,7 @@ ssize_t process_memory_usage() {
   char buf[1024];
   const char* s = NULL;
   ssize_t n = 0;
-  long val = 0;
+  unsigned long val = 0;
   int fd = 0;
   int i = 0;
   do {
@@ -118,12 +118,10 @@ ssize_t process_memory_usage() {
       goto err;
   }
   errno = 0;
-  val = strtol(s, NULL, 10);
+  val = strtoul(s, NULL, 10);
   if (errno != 0)
     goto err;
-  if (val < 0)
-    goto err;
-  return val * getpagesize();
+  return val * (unsigned long)getpagesize();
 err:
   return 0;
 }
