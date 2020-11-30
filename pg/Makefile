@@ -12,7 +12,7 @@ deps: ## dependencies
 	mkdir -p deps
 	curl -o deps/postgresql-12.3.tar.gz https://ftp.postgresql.org/pub/source/v12.3/postgresql-12.3.tar.gz
 	tar -zxvf deps/postgresql-12.3.tar.gz -C deps/
-	cd deps/postgresql-12.3 && CFLAGS="-fPIC" ./configure --without-readline --without-zlib && cd ../../
+	cd deps/postgresql-12.3 && CFLAGS="-fPIC" ./configure --without-readline --without-zlib
 
 deps/postgresql-12.3/src/interfaces/libpq/libpq.a: deps
 	cd deps/postgresql-12.3 && make -C src/bin
