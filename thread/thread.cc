@@ -105,7 +105,7 @@ void just::thread::TryJoin(const FunctionCallbackInfo<Value> &args) {
   pthread_t tid = (pthread_t)bi->Uint64Value(&lossless);
   void* tret;
   int r = pthread_tryjoin_np(tid, &tret);
-  answer->Set(context, 1, Integer::New(isolate, (long)tret)).Check();
+  answer->Set(context, 0, Integer::New(isolate, (long)tret)).Check();
   args.GetReturnValue().Set(BigInt::New(isolate, r));
 }
 
