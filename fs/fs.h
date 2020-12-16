@@ -12,6 +12,7 @@ namespace fs {
 
 void ReadFile(const FunctionCallbackInfo<Value> &args);
 void Unlink(const FunctionCallbackInfo<Value> &args);
+void Symlink(const FunctionCallbackInfo<Value> &args);
 void Open(const FunctionCallbackInfo<Value> &args);
 void Ioctl(const FunctionCallbackInfo<Value> &args);
 void Fstat(const FunctionCallbackInfo<Value> &args);

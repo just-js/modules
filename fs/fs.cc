@@ -7,6 +7,14 @@ void just::fs::Unlink(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, unlink(*fname)));
 }
 
+void just::fs::Symlink(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  String::Utf8Value target(isolate, args[0]);
+  String::Utf8Value linkpath(isolate, args[1]);
+  args.GetReturnValue().Set(Integer::New(isolate, symlink(*target, *linkpath)));
+}
+
 void just::fs::Open(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -176,6 +184,7 @@ void just::fs::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> fs = ObjectTemplate::New(isolate);
   SET_METHOD(isolate, fs, "open", just::fs::Open);
   SET_METHOD(isolate, fs, "unlink", just::fs::Unlink);
+  SET_METHOD(isolate, fs, "symlink", just::fs::Symlink);
   SET_METHOD(isolate, fs, "ioctl", just::fs::Ioctl);
   SET_METHOD(isolate, fs, "rmdir", just::fs::Rmdir);
   SET_METHOD(isolate, fs, "ftruncate", just::fs::Ftruncate);
