@@ -1,0 +1,11 @@
+{
+  "exports": [
+    {
+      "name": "crypto",
+      "obj": [
+        "crypto.o",
+        "deps/openssl-OpenSSL_1_1_1d/libcrypto.a"
+      ]
+    }
+  ]
+}
