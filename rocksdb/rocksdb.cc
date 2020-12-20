@@ -28,6 +28,31 @@ void just::rocksdb::Get(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(ab);
 }
 
+void just::rocksdb::Delete(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Object> obj = args[0].As<Object>();
+  rocksdb_t* db = (rocksdb_t*)obj->GetAlignedPointerFromInternalField(0);
+  Local<Object> obj2 = args[1].As<Object>();
+  rocksdb_writeoptions_t* options = (rocksdb_writeoptions_t*)obj2->GetAlignedPointerFromInternalField(0);
+  String::Utf8Value key(isolate, args[2]);
+  char *err = NULL;
+  rocksdb_delete(db, options, *key, key.length(), &err);
+}
+
+void just::rocksdb::PutString(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Object> obj = args[0].As<Object>();
+  rocksdb_t* db = (rocksdb_t*)obj->GetAlignedPointerFromInternalField(0);
+  Local<Object> obj2 = args[1].As<Object>();
+  rocksdb_writeoptions_t* options = (rocksdb_writeoptions_t*)obj2->GetAlignedPointerFromInternalField(0);
+  String::Utf8Value key(isolate, args[2]);
+  String::Utf8Value value(isolate, args[3]);
+  char *err = NULL;
+  rocksdb_put(db, options, *key, key.length(), *value, value.length(), &err);
+}
+
 void just::rocksdb::Put(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -39,7 +64,7 @@ void just::rocksdb::Put(const FunctionCallbackInfo<Value> &args) {
   Local<ArrayBuffer> value = args[3].As<ArrayBuffer>();
   std::shared_ptr<BackingStore> backing = value->GetBackingStore();
   char *data = static_cast<char *>(backing->Data());
-  int len = value->ByteLength();
+  int len = value->ByteLength() ;
   char *err = NULL;
   rocksdb_put(db, options, *key, key.length(), data, len, &err);
 }
@@ -231,6 +256,8 @@ void just::rocksdb::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, module, "close", Close);
   SET_METHOD(isolate, module, "get", Get);
   SET_METHOD(isolate, module, "put", Put);
+  SET_METHOD(isolate, module, "putString", PutString);
+  SET_METHOD(isolate, module, "remove", Delete);
   SET_METHOD(isolate, module, "openBackupEngine", OpenBackupEngine);
   SET_METHOD(isolate, module, "createReadOptions", CreateReadOptions);
   SET_METHOD(isolate, module, "createWriteOptions", CreateWriteOptions);

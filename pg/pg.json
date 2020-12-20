@@ -1,0 +1,8 @@
+{
+  "obj": [
+    "deps/postgresql-12.3/src/interfaces/libpq/libpq.a",
+    "deps/postgresql-12.3/src/port/libpgport_shlib.a",
+    "deps/postgresql-12.3/src/common/libpgcommon_shlib.a"
+ ]
+}
+
