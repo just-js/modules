@@ -12,7 +12,7 @@ void just::tcc::Compile(const FunctionCallbackInfo<Value> &args) {
   HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();
   TCCState *s;
-  int (*func)(int);
+  //int (*func)(int);
   String::Utf8Value my_program(args.GetIsolate(), args[0]);
   s = tcc_new();
   if (!s) {
@@ -54,7 +54,6 @@ void just::tcc::Compile(const FunctionCallbackInfo<Value> &args) {
 void just::tcc::GetSymbol(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
   Local<BigInt> address64 = Local<BigInt>::Cast(args[0]);
   TCCState* s = reinterpret_cast<TCCState*>(address64->Uint64Value());
   String::Utf8Value name(isolate, args[1]);
@@ -69,7 +68,6 @@ void just::tcc::GetSymbol(const FunctionCallbackInfo<Value> &args) {
 void just::tcc::AddSymbol(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
   Local<BigInt> address64 = Local<BigInt>::Cast(args[0]);
   TCCState* s = reinterpret_cast<TCCState*>(address64->Uint64Value());
   String::Utf8Value name(isolate, args[1]);

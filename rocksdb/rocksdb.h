@@ -12,6 +12,8 @@ void FreeMemory(void* buf, size_t length, void* data);
 void Close(const FunctionCallbackInfo<Value> &args);
 void Get(const FunctionCallbackInfo<Value> &args);
 void Put(const FunctionCallbackInfo<Value> &args);
+void Delete(const FunctionCallbackInfo<Value> &args);
+void PutString(const FunctionCallbackInfo<Value> &args);
 void OpenBackupEngine(const FunctionCallbackInfo<Value> &args);
 void CreateReadOptions(const FunctionCallbackInfo<Value> &args);
 void CreateWriteOptions(const FunctionCallbackInfo<Value> &args);

@@ -1,0 +1,10 @@
+{
+  "obj": [
+    "blake3_lib.o",
+    "blake3_dispatch.o",
+    "blake3_portable.o",
+    "blake3_avx2_x86-64_unix.o",
+    "blake3_avx512_x86-64_unix.o",
+    "blake3_sse41_x86-64_unix.o"
+  ]
+}

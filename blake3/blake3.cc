@@ -3,7 +3,6 @@
 void just::blake3::HashInit(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
   std::shared_ptr<BackingStore> buf = ab->GetBackingStore();
   blake3_hasher* hasher = (blake3_hasher*)calloc(1, sizeof(blake3_hasher));
@@ -14,7 +13,6 @@ void just::blake3::HashInit(const FunctionCallbackInfo<Value> &args) {
 void just::blake3::HashInitKeyed(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
   std::shared_ptr<BackingStore> buf = ab->GetBackingStore();
   String::Utf8Value str(isolate, args[1]);
@@ -42,7 +40,6 @@ void just::blake3::HashUpdate(const FunctionCallbackInfo<Value> &args) {
 void just::blake3::HashFinalize(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
   Local<ArrayBuffer> outab = args[0].As<ArrayBuffer>();
   std::shared_ptr<BackingStore> out = outab->GetBackingStore();
   blake3_hasher* hasher = (blake3_hasher*)outab->GetAlignedPointerFromInternalField(1);

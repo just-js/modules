@@ -2,6 +2,7 @@ C=gcc
 CC=g++
 TCC_VERSION=0.9.27
 LIBS=/usr/local/lib/just
+MODULE=tcc
 
 .PHONY: help clean
 
@@ -15,17 +16,13 @@ deps: ## dependencies
 	cd deps/tcc-${TCC_VERSION} && CFLAGS='-mstackrealign -fPIC -O3' ./configure && cd ../../
 	make -C deps/tcc-${TCC_VERSION}/ libtcc.a
 
-shared: deps ## build shared library
-	$(CC) -c -DSHARED -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/tcc-${TCC_VERSION} -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter tcc.cc
-	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group tcc.o deps/tcc-${TCC_VERSION}/libtcc.a -Wl,--end-group -Wl,-soname=tcc.so -o tcc.so
+library: deps ## build shared library
+	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/tcc-${TCC_VERSION} -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
+	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group ${MODULE}.o deps/tcc-${TCC_VERSION}/libtcc.a -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
 
-debug-shared: deps ## build shared library
-	$(CC) -c -DSHARED -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/tcc-${TCC_VERSION} -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter tcc.cc
-	$(CC) -g -shared -flto -pthread -m64 -Wl,--start-group tcc.o deps/tcc-${TCC_VERSION}/libtcc.a -Wl,--end-group -Wl,-soname=tcc.so -o tcc.so
-
-static: deps ## build static library
-	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/tcc-${TCC_VERSION} -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter tcc.cc
-	gcc-ar -crsT tcc.a tcc.o deps/tcc-${TCC_VERSION}/libtcc.a
+library-debug: deps ## build shared library
+	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/tcc-${TCC_VERSION} -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
+	$(CC) -g -shared -flto -pthread -m64 -Wl,--start-group ${MODULE}.o deps/tcc-${TCC_VERSION}/libtcc.a -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
 
 clean: ## tidy up
 	rm -f *.o
@@ -35,14 +32,13 @@ clean: ## tidy up
 all: ## make all
 	make clean
 	make deps
-	make shared
-	make static
+	make library
 
 cleanall: ## tidy up dependencies
 	make clean
 	rm -fr deps
 
 install: ## copy shared library to $INSTALL
-	mkdir -p ${LIBS} && cp -f tcc.so ${LIBS}
+	mkdir -p ${LIBS} && cp -f ${MODULE}.so ${LIBS}
 
 .DEFAULT_GOAL := help
