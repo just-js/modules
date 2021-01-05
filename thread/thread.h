@@ -25,6 +25,7 @@ void Join(const FunctionCallbackInfo<Value> &args);
 void TryJoin(const FunctionCallbackInfo<Value> &args);
 void Self(const FunctionCallbackInfo<Value> &args);
 void SetAffinity(const FunctionCallbackInfo<Value> &args);
+void SetName(const FunctionCallbackInfo<Value> &args);
 void GetAffinity(const FunctionCallbackInfo<Value> &args);
 void Init(Isolate* isolate, Local<ObjectTemplate> target);
 

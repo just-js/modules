@@ -131,6 +131,18 @@ void just::thread::SetAffinity(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, r));
 }
 
+void just::thread::SetName(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Context> context = isolate->GetCurrentContext();
+  Local<BigInt> bi = args[0]->ToBigInt(context).ToLocalChecked();
+  bool lossless = true;
+  pthread_t tid = (pthread_t)bi->Uint64Value(&lossless);
+  String::Utf8Value name(isolate, args[1]);
+  int r = pthread_setname_np(tid, *name);
+  args.GetReturnValue().Set(Integer::New(isolate, r));
+}
+
 void just::thread::GetAffinity(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -161,6 +173,7 @@ void just::thread::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, module, "tryJoin", TryJoin);
   SET_METHOD(isolate, module, "self", Self);
   SET_METHOD(isolate, module, "setAffinity", SetAffinity);
+  SET_METHOD(isolate, module, "setName", SetName);
   SET_METHOD(isolate, module, "getAffinity", GetAffinity);
   SET_MODULE(isolate, target, "thread", module);
 }
