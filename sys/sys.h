@@ -85,48 +85,6 @@ int get_usage(const pid_t pid, struct pstat* result) {
     return 0;
 }
 
-ssize_t process_memory_usage() {
-  char buf[1024];
-  const char* s = NULL;
-  ssize_t n = 0;
-  unsigned long val = 0;
-  int fd = 0;
-  int i = 0;
-  do {
-    fd = open("/proc/thread-self/stat", O_RDONLY);
-  } while (fd == -1 && errno == EINTR);
-  if (fd == -1) return (ssize_t)errno;
-  do
-    n = read(fd, buf, sizeof(buf) - 1);
-  while (n == -1 && errno == EINTR);
-  close(fd);
-  if (n == -1)
-    return (ssize_t)errno;
-  buf[n] = '\0';
-  s = strchr(buf, ' ');
-  if (s == NULL)
-    goto err;
-  s += 1;
-  if (*s != '(')
-    goto err;
-  s = strchr(s, ')');
-  if (s == NULL)
-    goto err;
-  for (i = 1; i <= 22; i++) {
-    s = strchr(s + 1, ' ');
-    if (s == NULL)
-      goto err;
-  }
-  errno = 0;
-  val = strtoul(s, NULL, 10);
-  if (errno != 0)
-    goto err;
-  return val * (unsigned long)getpagesize();
-err:
-  return 0;
-}
-
-ssize_t process_memory_usage();
 uint64_t hrtime();
 
 void WaitPID(const FunctionCallbackInfo<Value> &args);
@@ -144,7 +102,6 @@ void StrError(const FunctionCallbackInfo<Value> &args);
 void Sleep(const FunctionCallbackInfo<Value> &args);
 void USleep(const FunctionCallbackInfo<Value> &args);
 void NanoSleep(const FunctionCallbackInfo<Value> &args);
-void MemoryUsage(const FunctionCallbackInfo<Value> &args);
 void SharedMemoryUsage(const FunctionCallbackInfo<Value> &args);
 void HeapObjectStatistics(const FunctionCallbackInfo<Value> &args);
 void HeapCodeStatistics(const FunctionCallbackInfo<Value> &args);
