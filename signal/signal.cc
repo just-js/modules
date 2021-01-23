@@ -25,6 +25,74 @@ void just::signal::SigEmptySet(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, r));
 }
 
+void just::signal::SignalHandler(int signal, siginfo_t* info, void* void_context) {
+  signalHandler* handler = handlers[signal];
+  Isolate* isolate = handler->isolate;
+  Local<Function> callback = Local<Function>::New(isolate, handler->callback);
+  Local<Context> context = isolate->GetCurrentContext();
+  Local<ArrayBuffer> ab = ArrayBuffer::New(isolate, info, sizeof(siginfo_t), v8::ArrayBufferCreationMode::kExternalized);
+  Local<Value> args[2] = { Integer::New(isolate, signal), ab };
+  callback->Call(context, context->Global(), 2, args).ToLocalChecked();
+}
+
+void just::signal::SigAction(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  int sig = Local<Integer>::Cast(args[0])->Value();
+  struct sigaction act;
+  memset(&act, 0, sizeof(act));
+  if (args.Length() > 1) {
+    act.sa_handler = SIG_DFL;
+    act.sa_flags = SA_SIGINFO;
+    act.sa_sigaction = &SignalHandler;
+    just::signal::signalHandler* handler = new just::signal::signalHandler();
+    just::signal::handlers[sig] = handler;
+    handler->signum = sig;
+    handler->isolate = isolate;
+    handler->callback.Reset(isolate, args[1].As<Function>());
+  } else {
+    // todo - reset existing handler if it exists
+    act.sa_handler = SIG_IGN;
+  }
+  args.GetReturnValue().Set(Integer::New(isolate, sigaction(sig, &act, nullptr)));
+}
+
+void just::signal::Reset(const FunctionCallbackInfo<Value> &args) {
+  struct sigaction act;
+  memset(&act, 0, sizeof(act));
+  int r = 0;
+  for (unsigned nr = 1; nr < 32; nr += 1) {
+    if (nr == SIGKILL || nr == SIGSTOP || nr == SIGPROF)
+      continue;
+    act.sa_handler = SIG_IGN;
+    r = sigaction(nr, &act, nullptr);
+    if (r < 0) {
+      args.GetReturnValue().Set(Integer::New(args.GetIsolate(), r));
+      return;
+    }
+  }
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), 0));
+}
+
+void just::signal::SigFillSet(const FunctionCallbackInfo<Value> &args) {
+  Local<ArrayBuffer> buf = args[0].As<ArrayBuffer>();
+  std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
+  sigset_t* set = static_cast<sigset_t*>(backing->Data());
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), sigfillset(set)));
+}
+
+void just::signal::SigWait(const FunctionCallbackInfo<Value> &args) {
+  Local<ArrayBuffer> buf = args[0].As<ArrayBuffer>();
+  std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
+  sigset_t* set = static_cast<sigset_t*>(backing->Data());
+  int signum = Local<Integer>::Cast(args[1])->Value();
+  int r = sigwait(set, &signum);
+  if (r != 0) {
+    args.GetReturnValue().Set(Integer::New(args.GetIsolate(), r));
+    return;
+  }
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), signum));
+}
+
 void just::signal::SigProcMask(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -64,13 +132,16 @@ void just::signal::SigAddSet(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(BigInt::New(isolate, sigaddset(set, signum)));
 }
 
-// todo: rename namespace to "signal" singular
 void just::signal::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> module = ObjectTemplate::New(isolate);
   SET_METHOD(isolate, module, "sigprocmask", SigProcMask);
   SET_METHOD(isolate, module, "sigemptyset", SigEmptySet);
   SET_METHOD(isolate, module, "sigaddset", SigAddSet);
   SET_METHOD(isolate, module, "signalfd", SignalFD);
+  SET_METHOD(isolate, module, "sigfillset", SigFillSet);
+  SET_METHOD(isolate, module, "sigaction", SigAction);
+  SET_METHOD(isolate, module, "sigwait", SigWait);
+  SET_METHOD(isolate, module, "reset", Reset);
   SET_VALUE(isolate, module, "SFD_NONBLOCK", Integer::New(isolate, 
     SFD_NONBLOCK));
   SET_VALUE(isolate, module, "SFD_CLOEXEC", Integer::New(isolate, SFD_CLOEXEC));
@@ -127,6 +198,8 @@ void just::signal::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, module, "SIGURG", Integer::New(isolate, SIGURG));
   SET_VALUE(isolate, module, "SIGPOLL", Integer::New(isolate, SIGPOLL));
   SET_VALUE(isolate, module, "SIGIO", Integer::New(isolate, SIGIO));
+  SET_VALUE(isolate, module, "SIGTTIN", Integer::New(isolate, SIGTTIN));
+  SET_VALUE(isolate, module, "SIGTTOU", Integer::New(isolate, SIGTTOU));  
   SET_VALUE(isolate, module, "SIGIOT", Integer::New(isolate, SIGIOT));
   SET_VALUE(isolate, module, "SIGSYS", Integer::New(isolate, SIGSYS));
   SET_VALUE(isolate, module, "__SIGRTMAX", Integer::New(isolate, __SIGRTMAX));
