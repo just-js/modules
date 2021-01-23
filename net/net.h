@@ -29,6 +29,7 @@ void GetMacAddress(const FunctionCallbackInfo<Value> &args);
 void Accept(const FunctionCallbackInfo<Value> &args);
 void Seek(const FunctionCallbackInfo<Value> &args);
 void Read(const FunctionCallbackInfo<Value> &args);
+void Dup2(const FunctionCallbackInfo<Value> &args);
 void Recv(const FunctionCallbackInfo<Value> &args);
 void Write(const FunctionCallbackInfo<Value> &args);
 void WriteString(const FunctionCallbackInfo<Value> &args);

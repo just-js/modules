@@ -364,6 +364,19 @@ void just::net::Writev(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, 0));
 }
 
+void just::net::Dup2(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  int fd = Local<Integer>::Cast(args[0])->Value();
+  int argc = args.Length();
+  if (argc > 1) {
+    int fd2 = Local<Integer>::Cast(args[0])->Value();
+    args.GetReturnValue().Set(Integer::New(isolate, dup2(fd, fd2)));
+    return;
+  }
+  args.GetReturnValue().Set(Integer::New(isolate, dup(fd)));
+}
+
 void just::net::Send(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -440,6 +453,7 @@ void just::net::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, net, "getMacAddress", GetMacAddress);
   SET_METHOD(isolate, net, "accept", Accept);
   SET_METHOD(isolate, net, "read", Read);
+  SET_METHOD(isolate, net, "dup", Dup2);
   SET_METHOD(isolate, net, "seek", Seek);
   SET_METHOD(isolate, net, "recv", Recv);
   SET_METHOD(isolate, net, "write", Write);
@@ -524,5 +538,10 @@ void just::net::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, net, "SEEK_SET", Integer::New(isolate, SEEK_SET));
   SET_VALUE(isolate, net, "SEEK_CUR", Integer::New(isolate, SEEK_CUR));
   SET_VALUE(isolate, net, "SEEK_END", Integer::New(isolate, SEEK_END));
+
+  SET_VALUE(isolate, net, "SHUT_RD", Integer::New(isolate, SHUT_RD));
+  SET_VALUE(isolate, net, "SHUT_WR", Integer::New(isolate, SHUT_WR));
+  SET_VALUE(isolate, net, "SHUT_RDWR", Integer::New(isolate, SHUT_RDWR));
+
   SET_MODULE(isolate, target, "net", net);
 }
