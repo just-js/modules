@@ -24,6 +24,27 @@ void just::sys::WaitPID(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(args[0]);
 }
 
+void just::sys::Exec(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+  String::Utf8Value filePath(isolate, args[0]);
+  Local<Array> arguments = args[1].As<Array>();
+  int len = arguments->Length();
+  char** argv = (char**)calloc(len + 2, sizeof(char*));
+  argv[0] = (char*)calloc(1, filePath.length());
+  memcpy(argv[0], *filePath, filePath.length());
+  Local<Context> context = isolate->GetCurrentContext();
+  int written = 0;
+  for (int i = 0; i < len; i++) {
+    Local<String> val = 
+      arguments->Get(context, i).ToLocalChecked().As<v8::String>();
+    argv[i + 1] = (char*)calloc(1, val->Length() + 1);
+    val->WriteUtf8(isolate, argv[i + 1], val->Length() + 1, &written, 
+      v8::String::HINT_MANY_WRITES_EXPECTED);
+  }
+  argv[len + 1] = NULL;
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), execvp(*filePath, argv)));
+}
+
 void just::sys::Spawn(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -119,6 +140,10 @@ void just::sys::Exit(const FunctionCallbackInfo<Value>& args) {
   exit(status);
 }
 
+void just::sys::Fork(const FunctionCallbackInfo<Value>& args) {
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), fork()));
+}
+
 void just::sys::Kill(const FunctionCallbackInfo<Value>& args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -183,15 +208,19 @@ void just::sys::GetrUsage(const FunctionCallbackInfo<Value> &args) {
 }
 
 void just::sys::PID(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  args.GetReturnValue().Set(Integer::New(isolate, getpid()));
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), getpid()));
+}
+
+void just::sys::GetSid(const FunctionCallbackInfo<Value> &args) {
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), getsid(Local<Integer>::Cast(args[0])->Value())));
+}
+
+void just::sys::SetSid(const FunctionCallbackInfo<Value> &args) {
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), setsid()));
 }
 
 void just::sys::Errno(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  args.GetReturnValue().Set(Integer::New(isolate, errno));
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), errno));
 }
 
 void just::sys::StrError(const FunctionCallbackInfo<Value> &args) {
@@ -662,6 +691,27 @@ void just::sys::MUnmap(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, r));
 }
 
+void just::sys::Ioctl(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Context> context = isolate->GetCurrentContext();
+  int fd = args[0]->Int32Value(context).ToChecked();
+  int flags = args[1]->Int32Value(context).ToChecked();
+  if (args.Length() > 2) {
+    if (args[2]->IsArrayBuffer()) {
+      Local<ArrayBuffer> buf = args[2].As<ArrayBuffer>();
+      std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
+      args.GetReturnValue().Set(Integer::New(isolate, ioctl(fd, flags, backing->Data())));
+      return;
+    }
+    if (args[2]->IsNumber()) {
+      args.GetReturnValue().Set(Integer::New(isolate, ioctl(fd, flags, Local<Integer>::Cast(args[2])->Value())));
+      return;
+    }
+  }
+  args.GetReturnValue().Set(Integer::New(isolate, ioctl(fd, flags)));
+}
+
 #ifndef STATIC
 void just::sys::DLOpen(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
@@ -741,6 +791,10 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, sys, "heapObjectStatistics", HeapObjectStatistics);
   SET_METHOD(isolate, sys, "heapCodeStatistics", HeapCodeStatistics);
   SET_METHOD(isolate, sys, "pid", PID);
+  SET_METHOD(isolate, sys, "fork", Fork);
+  SET_METHOD(isolate, sys, "exec", Exec);
+  SET_METHOD(isolate, sys, "getsid", GetSid);
+  SET_METHOD(isolate, sys, "setsid", SetSid);
   SET_METHOD(isolate, sys, "errno", Errno);
   SET_METHOD(isolate, sys, "strerror", StrError);
   SET_METHOD(isolate, sys, "cpuUsage", CPUUsage);
@@ -748,6 +802,7 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, sys, "hrtime", HRTime);
   SET_METHOD(isolate, sys, "cwd", Cwd);
   SET_METHOD(isolate, sys, "env", Env);
+  SET_METHOD(isolate, sys, "ioctl", Ioctl);
   SET_METHOD(isolate, sys, "spawn", Spawn);
   SET_METHOD(isolate, sys, "waitpid", WaitPID);
   SET_METHOD(isolate, sys, "runMicroTasks", RunMicroTasks);

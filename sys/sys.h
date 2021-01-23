@@ -6,6 +6,7 @@
 #include <sys/times.h>
 #include <sys/resource.h>
 #include <limits.h>
+#include <sys/ioctl.h>
 #include <sys/timerfd.h>
 #ifndef STATIC
 #include <dlfcn.h>
@@ -97,6 +98,11 @@ void Kill(const FunctionCallbackInfo<Value>& args);
 void GetrUsage(const FunctionCallbackInfo<Value> &args);
 void CPUUsage(const FunctionCallbackInfo<Value> &args);
 void PID(const FunctionCallbackInfo<Value> &args);
+void Fork(const FunctionCallbackInfo<Value> &args);
+void Ioctl(const FunctionCallbackInfo<Value> &args);
+void Exec(const FunctionCallbackInfo<Value> &args);
+void GetSid(const FunctionCallbackInfo<Value> &args);
+void SetSid(const FunctionCallbackInfo<Value> &args);
 void Errno(const FunctionCallbackInfo<Value> &args);
 void StrError(const FunctionCallbackInfo<Value> &args);
 void Sleep(const FunctionCallbackInfo<Value> &args);
