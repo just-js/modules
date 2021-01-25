@@ -14,7 +14,25 @@
 namespace just {
 namespace crypto {
 
-void Hash(const FunctionCallbackInfo<Value> &args);
+struct hasher {
+  void* src;
+  size_t src_len;
+	void* dest;
+	size_t dest_len;
+	EVP_MD_CTX* ctx;
+	const EVP_MD* md;
+  int handle;
+};
+
+std::map<int, hasher*> hashers;
+static int hcount = 0;
+static bool initialized = false;
+
+void Create(const FunctionCallbackInfo<Value> &args);
+void Update(const FunctionCallbackInfo<Value> &args);
+void Digest(const FunctionCallbackInfo<Value> &args);
+void Reset(const FunctionCallbackInfo<Value> &args);
+void Free(const FunctionCallbackInfo<Value> &args);
 void Init(Isolate* isolate, Local<ObjectTemplate> target);
 
 }
