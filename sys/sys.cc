@@ -712,6 +712,16 @@ void just::sys::Ioctl(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, ioctl(fd, flags)));
 }
 
+void just::sys::Reboot(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  int flags = RB_POWER_OFF;
+  if (args.Length() > 0) {
+    flags = Local<Integer>::Cast(args[0])->Value();
+  }
+  args.GetReturnValue().Set(Integer::New(isolate, reboot(flags)));
+}
+
 #ifndef STATIC
 void just::sys::DLOpen(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
@@ -814,6 +824,7 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, sys, "nanosleep", NanoSleep);
   SET_METHOD(isolate, sys, "mmap", MMap);
   SET_METHOD(isolate, sys, "munmap", MUnmap);
+  SET_METHOD(isolate, sys, "reboot", Reboot);
 #ifndef STATIC
   SET_METHOD(isolate, sys, "dlopen", DLOpen);
   SET_METHOD(isolate, sys, "dlsym", DLSym);
@@ -847,6 +858,11 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, sys, "PROT_WRITE", Integer::New(isolate, PROT_WRITE));
   SET_VALUE(isolate, sys, "MAP_SHARED", Integer::New(isolate, MAP_SHARED));
   SET_VALUE(isolate, sys, "MAP_ANONYMOUS", Integer::New(isolate, MAP_ANONYMOUS));
+
+  SET_VALUE(isolate, sys, "RB_AUTOBOOT", Integer::New(isolate, RB_AUTOBOOT));
+  SET_VALUE(isolate, sys, "RB_HALT_SYSTEM", Integer::New(isolate, RB_HALT_SYSTEM));
+  SET_VALUE(isolate, sys, "RB_POWER_OFF", Integer::New(isolate, RB_POWER_OFF));
+  SET_VALUE(isolate, sys, "RB_SW_SUSPEND", Integer::New(isolate, RB_SW_SUSPEND));
 // These don't work on alpine. will have to investigate why not
 //  SET_VALUE(isolate, sys, "BYTE_ORDER", Integer::New(isolate, __BYTE_ORDER));
 //  SET_VALUE(isolate, sys, "LITTLE_ENDIAN", Integer::New(isolate, __LITTLE_ENDIAN));

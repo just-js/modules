@@ -15,6 +15,18 @@ void just::fs::Symlink(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, symlink(*target, *linkpath)));
 }
 
+void just::fs::Mknod(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  String::Utf8Value target(isolate, args[0]);
+  unsigned int type = Local<Integer>::Cast(args[1])->Value();
+  unsigned int mode = Local<Integer>::Cast(args[2])->Value();
+  int major = Local<Integer>::Cast(args[3])->Value();
+  int minor = Local<Integer>::Cast(args[4])->Value();
+  dev_t dev = makedev(major, minor);
+  args.GetReturnValue().Set(Integer::New(isolate, mknod(*target, type | mode, dev)));
+}
+
 void just::fs::Mount(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -219,6 +231,7 @@ void just::fs::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, fs, "chdir", just::fs::Chdir);
   SET_METHOD(isolate, fs, "mount", just::fs::Mount);
   SET_METHOD(isolate, fs, "umount", just::fs::Umount);
+  SET_METHOD(isolate, fs, "mknod", just::fs::Mknod);
 
   // todo: move fcntl here
 

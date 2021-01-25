@@ -8,6 +8,7 @@
 #include <limits.h>
 #include <sys/ioctl.h>
 #include <sys/timerfd.h>
+#include <sys/reboot.h>
 #ifndef STATIC
 #include <dlfcn.h>
 #endif
@@ -126,6 +127,7 @@ void AvailablePages(const FunctionCallbackInfo<Value> &args);
 void ReadMemory(const FunctionCallbackInfo<Value> &args);
 void MMap(const FunctionCallbackInfo<Value> &args);
 void MUnmap(const FunctionCallbackInfo<Value> &args);
+void Reboot(const FunctionCallbackInfo<Value> &args);
 #ifndef STATIC
 void DLOpen(const FunctionCallbackInfo<Value> &args);
 void DLSym(const FunctionCallbackInfo<Value> &args);
