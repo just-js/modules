@@ -27,6 +27,17 @@ void just::fs::Mount(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, mount(*source, *target, *fstype, flags, *opts)));
 }
 
+void just::fs::Umount(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  String::Utf8Value target(isolate, args[0]);
+  int flags = 0;
+  if (args.Length() > 1) {
+    flags = Local<Integer>::Cast(args[1])->Value();
+  }
+  args.GetReturnValue().Set(Integer::New(isolate, umount2(*target, flags)));
+}
+
 void just::fs::Open(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -207,6 +218,7 @@ void just::fs::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, fs, "readdir", just::fs::Readdir);
   SET_METHOD(isolate, fs, "chdir", just::fs::Chdir);
   SET_METHOD(isolate, fs, "mount", just::fs::Mount);
+  SET_METHOD(isolate, fs, "umount", just::fs::Umount);
 
   // todo: move fcntl here
 

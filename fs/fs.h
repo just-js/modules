@@ -25,6 +25,7 @@ void Mkdir(const FunctionCallbackInfo<Value> &args);
 void Readdir(const FunctionCallbackInfo<Value> &args);
 void Lseek(const FunctionCallbackInfo<Value> &args);
 void Mount(const FunctionCallbackInfo<Value> &args);
+void Umount(const FunctionCallbackInfo<Value> &args);
 
 void Init(Isolate* isolate, Local<ObjectTemplate> target);
 }
