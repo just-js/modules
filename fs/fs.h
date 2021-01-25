@@ -5,6 +5,7 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <sys/mount.h>
 
 namespace just {
 
@@ -23,6 +24,7 @@ void Rename(const FunctionCallbackInfo<Value> &args);
 void Mkdir(const FunctionCallbackInfo<Value> &args);
 void Readdir(const FunctionCallbackInfo<Value> &args);
 void Lseek(const FunctionCallbackInfo<Value> &args);
+void Mount(const FunctionCallbackInfo<Value> &args);
 
 void Init(Isolate* isolate, Local<ObjectTemplate> target);
 }

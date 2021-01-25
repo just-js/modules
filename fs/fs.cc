@@ -15,6 +15,18 @@ void just::fs::Symlink(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, symlink(*target, *linkpath)));
 }
 
+void just::fs::Mount(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  String::Utf8Value source(isolate, args[0]);
+  String::Utf8Value target(isolate, args[1]);
+  String::Utf8Value fstype(isolate, args[2]);
+  Local<BigInt> address64 = Local<BigInt>::Cast(args[3]);
+  String::Utf8Value opts(isolate, args[4]);
+  unsigned long flags = reinterpret_cast<unsigned long>(address64->Uint64Value());
+  args.GetReturnValue().Set(Integer::New(isolate, mount(*source, *target, *fstype, flags, *opts)));
+}
+
 void just::fs::Open(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -194,6 +206,7 @@ void just::fs::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, fs, "lseek", just::fs::Lseek);
   SET_METHOD(isolate, fs, "readdir", just::fs::Readdir);
   SET_METHOD(isolate, fs, "chdir", just::fs::Chdir);
+  SET_METHOD(isolate, fs, "mount", just::fs::Mount);
 
   // todo: move fcntl here
 
