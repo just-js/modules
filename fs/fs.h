@@ -8,6 +8,11 @@
 #include <sys/mount.h>
 #include <sys/sysmacros.h>
 
+#include <limits.h>
+#include <stdlib.h>
+#include <time.h>
+#include <utime.h>
+
 namespace just {
 
 namespace fs {
@@ -28,6 +33,8 @@ void Lseek(const FunctionCallbackInfo<Value> &args);
 void Mount(const FunctionCallbackInfo<Value> &args);
 void Umount(const FunctionCallbackInfo<Value> &args);
 void Mknod(const FunctionCallbackInfo<Value> &args);
+void Realpath(const FunctionCallbackInfo<Value> &args);
+void Utime(const FunctionCallbackInfo<Value> &args);
 
 void Init(Isolate* isolate, Local<ObjectTemplate> target);
 }

@@ -7,6 +7,32 @@ void just::fs::Unlink(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, unlink(*fname)));
 }
 
+void just::fs::Realpath(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  String::Utf8Value fname(isolate, args[0]);
+  Local<ArrayBuffer> buf = args[1].As<ArrayBuffer>();
+  std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
+  char* newpath = (char*)backing->Data();
+  newpath = realpath(*fname, newpath);
+  if (newpath == NULL) {
+    args.GetReturnValue().Set(Integer::New(isolate, -1));
+  }
+  args.GetReturnValue().Set(Integer::New(isolate, 0));
+}
+
+void just::fs::Utime(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  String::Utf8Value fname(isolate, args[0]);
+  // from http://rosettacode.org/wiki/File/Modification_Time#C
+  struct utimbuf new_times;
+  struct stat info;
+  stat(*fname, &info);
+  //time_t mtime = info.st_mtime;
+  new_times.actime = info.st_atime; /* keep atime unchanged */
+  new_times.modtime = time(NULL); /* set mtime to current time */
+  args.GetReturnValue().Set(Integer::New(isolate, utime(*fname, &new_times)));
+}
+
 void just::fs::Symlink(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -232,6 +258,8 @@ void just::fs::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, fs, "mount", just::fs::Mount);
   SET_METHOD(isolate, fs, "umount", just::fs::Umount);
   SET_METHOD(isolate, fs, "mknod", just::fs::Mknod);
+  SET_METHOD(isolate, fs, "realpath", just::fs::Realpath);
+  SET_METHOD(isolate, fs, "utime", just::fs::Utime);
 
   // todo: move fcntl here
 

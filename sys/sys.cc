@@ -863,6 +863,10 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, sys, "RB_HALT_SYSTEM", Integer::New(isolate, RB_HALT_SYSTEM));
   SET_VALUE(isolate, sys, "RB_POWER_OFF", Integer::New(isolate, RB_POWER_OFF));
   SET_VALUE(isolate, sys, "RB_SW_SUSPEND", Integer::New(isolate, RB_SW_SUSPEND));
+
+  SET_VALUE(isolate, sys, "TIOCNOTTY", Integer::New(isolate, TIOCNOTTY));
+  SET_VALUE(isolate, sys, "TIOCSCTTY", Integer::New(isolate, TIOCSCTTY));
+
 // These don't work on alpine. will have to investigate why not
 //  SET_VALUE(isolate, sys, "BYTE_ORDER", Integer::New(isolate, __BYTE_ORDER));
 //  SET_VALUE(isolate, sys, "LITTLE_ENDIAN", Integer::New(isolate, __LITTLE_ENDIAN));
