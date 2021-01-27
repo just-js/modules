@@ -45,6 +45,13 @@ void just::sys::Exec(const FunctionCallbackInfo<Value>& args) {
   args.GetReturnValue().Set(Integer::New(args.GetIsolate(), execvp(*filePath, argv)));
 }
 
+void just::sys::Setenv(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  String::Utf8Value name(isolate, args[0]);
+  String::Utf8Value value(isolate, args[1]);
+  args.GetReturnValue().Set(Integer::New(isolate, setenv(*name, *value, 1)));
+}
+
 void just::sys::Spawn(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -825,6 +832,7 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, sys, "mmap", MMap);
   SET_METHOD(isolate, sys, "munmap", MUnmap);
   SET_METHOD(isolate, sys, "reboot", Reboot);
+  SET_METHOD(isolate, sys, "setenv", Setenv);
 #ifndef STATIC
   SET_METHOD(isolate, sys, "dlopen", DLOpen);
   SET_METHOD(isolate, sys, "dlsym", DLSym);

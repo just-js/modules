@@ -128,6 +128,7 @@ void ReadMemory(const FunctionCallbackInfo<Value> &args);
 void MMap(const FunctionCallbackInfo<Value> &args);
 void MUnmap(const FunctionCallbackInfo<Value> &args);
 void Reboot(const FunctionCallbackInfo<Value> &args);
+void Setenv(const FunctionCallbackInfo<Value> &args);
 #ifndef STATIC
 void DLOpen(const FunctionCallbackInfo<Value> &args);
 void DLSym(const FunctionCallbackInfo<Value> &args);
