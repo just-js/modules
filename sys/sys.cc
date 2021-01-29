@@ -226,6 +226,22 @@ void just::sys::SetSid(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(args.GetIsolate(), setsid()));
 }
 
+void just::sys::GetUid(const FunctionCallbackInfo<Value> &args) {
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), getuid()));
+}
+
+void just::sys::SetUid(const FunctionCallbackInfo<Value> &args) {
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), setuid(Local<Integer>::Cast(args[0])->Value())));
+}
+
+void just::sys::GetGid(const FunctionCallbackInfo<Value> &args) {
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), getgid()));
+}
+
+void just::sys::SetGid(const FunctionCallbackInfo<Value> &args) {
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), setgid(Local<Integer>::Cast(args[0])->Value())));
+}
+
 void just::sys::Errno(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(args.GetIsolate(), errno));
 }
@@ -793,6 +809,11 @@ void just::sys::DLClose(const FunctionCallbackInfo<Value> &args) {
 
 void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> sys = ObjectTemplate::New(isolate);
+  SET_METHOD(isolate, sys, "getuid", GetUid);
+  SET_METHOD(isolate, sys, "setuid", SetUid);
+  SET_METHOD(isolate, sys, "getgid", GetGid);
+  SET_METHOD(isolate, sys, "setgid", SetGid);
+
   SET_METHOD(isolate, sys, "calloc", Calloc);
   SET_METHOD(isolate, sys, "readString", ReadString);
   SET_METHOD(isolate, sys, "writeString", WriteString);

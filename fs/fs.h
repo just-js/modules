@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <utime.h>
+#include <linux/loop.h>
 
 namespace just {
 
@@ -35,6 +36,9 @@ void Umount(const FunctionCallbackInfo<Value> &args);
 void Mknod(const FunctionCallbackInfo<Value> &args);
 void Realpath(const FunctionCallbackInfo<Value> &args);
 void Utime(const FunctionCallbackInfo<Value> &args);
+
+void Chmod(const FunctionCallbackInfo<Value> &args);
+void Chown(const FunctionCallbackInfo<Value> &args);
 
 void Init(Isolate* isolate, Local<ObjectTemplate> target);
 }

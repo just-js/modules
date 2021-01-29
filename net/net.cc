@@ -370,7 +370,7 @@ void just::net::Dup2(const FunctionCallbackInfo<Value> &args) {
   int fd = Local<Integer>::Cast(args[0])->Value();
   int argc = args.Length();
   if (argc > 1) {
-    int fd2 = Local<Integer>::Cast(args[0])->Value();
+    int fd2 = Local<Integer>::Cast(args[1])->Value();
     args.GetReturnValue().Set(Integer::New(isolate, dup2(fd, fd2)));
     return;
   }

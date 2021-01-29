@@ -129,6 +129,12 @@ void MMap(const FunctionCallbackInfo<Value> &args);
 void MUnmap(const FunctionCallbackInfo<Value> &args);
 void Reboot(const FunctionCallbackInfo<Value> &args);
 void Setenv(const FunctionCallbackInfo<Value> &args);
+
+void GetUid(const FunctionCallbackInfo<Value> &args);
+void SetUid(const FunctionCallbackInfo<Value> &args);
+void GetGid(const FunctionCallbackInfo<Value> &args);
+void SetGid(const FunctionCallbackInfo<Value> &args);
+
 #ifndef STATIC
 void DLOpen(const FunctionCallbackInfo<Value> &args);
 void DLSym(const FunctionCallbackInfo<Value> &args);

@@ -93,6 +93,22 @@ void just::fs::Open(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, open(*fname, flags, mode)));
 }
 
+void just::fs::Chmod(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  int fd = Local<Integer>::Cast(args[0])->Value();
+  int mode = Local<Integer>::Cast(args[1])->Value();
+  //int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+  args.GetReturnValue().Set(Integer::New(isolate, fchmod(fd, mode)));
+}
+
+void just::fs::Chown(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  int fd = Local<Integer>::Cast(args[0])->Value();
+  int uid = Local<Integer>::Cast(args[1])->Value();
+  int gid = Local<Integer>::Cast(args[2])->Value();
+  args.GetReturnValue().Set(Integer::New(isolate, fchown(fd, uid, gid)));
+}
+
 void just::fs::Ioctl(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -261,6 +277,8 @@ void just::fs::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, fs, "realpath", just::fs::Realpath);
   SET_METHOD(isolate, fs, "utime", just::fs::Utime);
 
+  SET_METHOD(isolate, fs, "chmod", just::fs::Chmod);
+  SET_METHOD(isolate, fs, "chown", just::fs::Chown);
   // todo: move fcntl here
 
   SET_VALUE(isolate, fs, "O_RDONLY", Integer::New(isolate, O_RDONLY));
