@@ -873,6 +873,8 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
     TFD_CLOEXEC));
   SET_VALUE(isolate, sys, "FD_CLOEXEC", Integer::New(isolate, 
     FD_CLOEXEC));
+  SET_VALUE(isolate, sys, "O_CLOEXEC", Integer::New(isolate, 
+    O_CLOEXEC));
   SET_VALUE(isolate, sys, "F_GETFL", Integer::New(isolate, F_GETFL));
   SET_VALUE(isolate, sys, "F_SETFL", Integer::New(isolate, F_SETFL));
   SET_VALUE(isolate, sys, "F_GETFD", Integer::New(isolate, F_GETFD));

@@ -359,6 +359,9 @@ void just::fs::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, fs, "S_IFDIR", Integer::New(isolate, S_IFDIR));
   SET_VALUE(isolate, fs, "S_IFCHR", Integer::New(isolate, S_IFCHR));
   SET_VALUE(isolate, fs, "S_IFIFO", Integer::New(isolate, S_IFIFO));
+  // mount.h constants
+  SET_VALUE(isolate, fs, "MS_MGC_VAL", Integer::New(isolate, MS_MGC_VAL));
+  SET_VALUE(isolate, fs, "MS_MGC_MSK", Integer::New(isolate, MS_MGC_MSK));
 
   SET_MODULE(isolate, target, "fs", fs);
 }

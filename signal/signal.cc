@@ -203,5 +203,6 @@ void just::signal::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, module, "SIGIOT", Integer::New(isolate, SIGIOT));
   SET_VALUE(isolate, module, "SIGSYS", Integer::New(isolate, SIGSYS));
   SET_VALUE(isolate, module, "__SIGRTMAX", Integer::New(isolate, __SIGRTMAX));
+  SET_VALUE(isolate, module, "SIG_IGN", Integer::New(isolate, SIG_IGN));
   SET_MODULE(isolate, target, "signal", module);
 }
