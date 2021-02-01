@@ -9,6 +9,7 @@
 #include <sys/ioctl.h>
 #include <sys/timerfd.h>
 #include <sys/reboot.h>
+#include <sys/syscall.h>
 #ifndef STATIC
 #include <dlfcn.h>
 #endif
@@ -99,6 +100,8 @@ void Kill(const FunctionCallbackInfo<Value>& args);
 void GetrUsage(const FunctionCallbackInfo<Value> &args);
 void CPUUsage(const FunctionCallbackInfo<Value> &args);
 void PID(const FunctionCallbackInfo<Value> &args);
+void PPID(const FunctionCallbackInfo<Value> &args);
+void TID(const FunctionCallbackInfo<Value> &args);
 void Fork(const FunctionCallbackInfo<Value> &args);
 void Ioctl(const FunctionCallbackInfo<Value> &args);
 void Exec(const FunctionCallbackInfo<Value> &args);
@@ -107,6 +110,8 @@ void SetSid(const FunctionCallbackInfo<Value> &args);
 void Errno(const FunctionCallbackInfo<Value> &args);
 void StrError(const FunctionCallbackInfo<Value> &args);
 void Sleep(const FunctionCallbackInfo<Value> &args);
+void ShmOpen(const FunctionCallbackInfo<Value> &args);
+void ShmUnlink(const FunctionCallbackInfo<Value> &args);
 void USleep(const FunctionCallbackInfo<Value> &args);
 void NanoSleep(const FunctionCallbackInfo<Value> &args);
 void SharedMemoryUsage(const FunctionCallbackInfo<Value> &args);
@@ -129,6 +134,9 @@ void MMap(const FunctionCallbackInfo<Value> &args);
 void MUnmap(const FunctionCallbackInfo<Value> &args);
 void Reboot(const FunctionCallbackInfo<Value> &args);
 void Setenv(const FunctionCallbackInfo<Value> &args);
+
+void GetPgrp(const FunctionCallbackInfo<Value> &args);
+void SetPgid(const FunctionCallbackInfo<Value> &args);
 
 void GetUid(const FunctionCallbackInfo<Value> &args);
 void SetUid(const FunctionCallbackInfo<Value> &args);

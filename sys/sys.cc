@@ -218,6 +218,26 @@ void just::sys::PID(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(args.GetIsolate(), getpid()));
 }
 
+void just::sys::TID(const FunctionCallbackInfo<Value> &args) {
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), syscall(SYS_gettid)));
+}
+
+void just::sys::GetPgrp(const FunctionCallbackInfo<Value> &args) {
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), getpgrp()));
+}
+
+void just::sys::SetPgid(const FunctionCallbackInfo<Value> &args) {
+  if (args.Length() == 1) {
+    args.GetReturnValue().Set(Integer::New(args.GetIsolate(), setpgid(0, Local<Integer>::Cast(args[0])->Value())));
+    return;
+  }
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), setpgid(Local<Integer>::Cast(args[0])->Value(), Local<Integer>::Cast(args[1])->Value())));
+}
+
+void just::sys::PPID(const FunctionCallbackInfo<Value> &args) {
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), getppid()));
+}
+
 void just::sys::GetSid(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(args.GetIsolate(), getsid(Local<Integer>::Cast(args[0])->Value())));
 }
@@ -247,39 +267,22 @@ void just::sys::Errno(const FunctionCallbackInfo<Value> &args) {
 }
 
 void just::sys::StrError(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-  int err = args[0]->IntegerValue(context).ToChecked();
-  args.GetReturnValue().Set(String::NewFromUtf8(isolate, 
-    strerror(err)).ToLocalChecked());
+  args.GetReturnValue().Set(String::NewFromUtf8(args.GetIsolate(), 
+    strerror(Local<Integer>::Cast(args[0])->Value())).ToLocalChecked());
 }
 
 void just::sys::Sleep(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-  int seconds = args[0]->IntegerValue(context).ToChecked();
-  sleep(seconds);
+  sleep(Local<Integer>::Cast(args[0])->Value());
 }
 
 void just::sys::USleep(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-  int microseconds = args[0]->IntegerValue(context).ToChecked();
-  usleep(microseconds);
+  usleep(Local<Integer>::Cast(args[0])->Value());
 }
 
 void just::sys::NanoSleep(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-  int seconds = args[0]->IntegerValue(context).ToChecked();
-  int nanoseconds = args[1]->IntegerValue(context).ToChecked();
   struct timespec sleepfor;
-  sleepfor.tv_sec = seconds;
-  sleepfor.tv_nsec = nanoseconds;
+  sleepfor.tv_sec = Local<Integer>::Cast(args[0])->Value();
+  sleepfor.tv_nsec = Local<Integer>::Cast(args[1])->Value();
   nanosleep(&sleepfor, NULL);
 }
 
@@ -423,44 +426,34 @@ void just::sys::HeapSpaceUsage(const FunctionCallbackInfo<Value> &args) {
 }
 
 void just::sys::Memcpy(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-
-  Local<ArrayBuffer> abdest = args[0].As<ArrayBuffer>();
-  std::shared_ptr<BackingStore> bdest = abdest->GetBackingStore();
+  std::shared_ptr<BackingStore> bdest = args[0].As<ArrayBuffer>()->GetBackingStore();
   char *dest = static_cast<char *>(bdest->Data());
-
-  Local<ArrayBuffer> absource = args[1].As<ArrayBuffer>();
-  std::shared_ptr<BackingStore> bsource = absource->GetBackingStore();
+  std::shared_ptr<BackingStore> bsource = args[1].As<ArrayBuffer>()->GetBackingStore();
   char *source = static_cast<char *>(bsource->Data());
   int slen = bsource->ByteLength();
-
   int argc = args.Length();
   int off = 0;
   if (argc > 2) {
-    off = args[2]->Int32Value(context).ToChecked();
+    off = Local<Integer>::Cast(args[2])->Value();
   }
   int len = slen;
   if (argc > 3) {
-    len = args[3]->Int32Value(context).ToChecked();
+    len = Local<Integer>::Cast(args[3])->Value();
   }
   int off2 = 0;
   if (argc > 4) {
-    off2 = args[4]->Int32Value(context).ToChecked();
+    off2 = Local<Integer>::Cast(args[4])->Value();
   }
   if (len == 0) return;
   dest = dest + off;
   source = source + off2;
   memcpy(dest, source, len);
-  args.GetReturnValue().Set(Integer::New(isolate, len));
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), len));
 }
 
 void just::sys::Utf8Length(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<String> str = args[0].As<String>();
-  args.GetReturnValue().Set(Integer::New(isolate, str->Utf8Length(isolate)));
+  args.GetReturnValue().Set(Integer::New(isolate, args[0].As<String>()->Utf8Length(isolate)));
 }
 
 void just::sys::Calloc(const FunctionCallbackInfo<Value> &args) {
@@ -647,14 +640,14 @@ void just::sys::ReadMemory(const FunctionCallbackInfo<Value> &args) {
       ArrayBuffer::New(isolate, std::move(backing));
   args.GetReturnValue().Set(ab);
 }
-/*
+
 void just::sys::ShmOpen(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();
   String::Utf8Value name(isolate, args[0]);
   int argc = args.Length();
-  int flags = O_RDONLY;
+  int flags = O_RDWR | O_CREAT;
   if (argc > 1) {
     flags = args[1]->Int32Value(context).ToChecked();
   }
@@ -671,10 +664,10 @@ void just::sys::ShmUnlink(const FunctionCallbackInfo<Value> &args) {
   String::Utf8Value name(isolate, args[0]);
   args.GetReturnValue().Set(Integer::New(isolate, shm_unlink(*name)));
 }
-*/
+
 void just::sys::MMap(const FunctionCallbackInfo<Value> &args) {
+  // TODO: if private, then don't use sharedarraybuffer
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();
   int argc = args.Length();
   int fd = args[0]->Int32Value(context).ToChecked();
@@ -695,11 +688,8 @@ void just::sys::MMap(const FunctionCallbackInfo<Value> &args) {
   if (data == MAP_FAILED) {
     return;
   }
-  std::unique_ptr<BackingStore> backing =
-      SharedArrayBuffer::NewBackingStore(data, len, 
-        just::FreeMappedMemory, nullptr);
   Local<SharedArrayBuffer> ab =
-      SharedArrayBuffer::New(isolate, std::move(backing));
+      SharedArrayBuffer::New(isolate, data, len, v8::ArrayBufferCreationMode::kInternalized);
   args.GetReturnValue().Set(ab);
 }
 
@@ -813,8 +803,10 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, sys, "setuid", SetUid);
   SET_METHOD(isolate, sys, "getgid", GetGid);
   SET_METHOD(isolate, sys, "setgid", SetGid);
-
   SET_METHOD(isolate, sys, "calloc", Calloc);
+  SET_METHOD(isolate, sys, "shmopen", ShmOpen);
+  SET_METHOD(isolate, sys, "shmunlink", ShmUnlink);
+
   SET_METHOD(isolate, sys, "readString", ReadString);
   SET_METHOD(isolate, sys, "writeString", WriteString);
   SET_METHOD(isolate, sys, "getAddress", GetAddress);
@@ -829,6 +821,10 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, sys, "heapObjectStatistics", HeapObjectStatistics);
   SET_METHOD(isolate, sys, "heapCodeStatistics", HeapCodeStatistics);
   SET_METHOD(isolate, sys, "pid", PID);
+  SET_METHOD(isolate, sys, "ppid", PPID);
+  SET_METHOD(isolate, sys, "setpgid", SetPgid);
+  SET_METHOD(isolate, sys, "getpgrp", GetPgrp);
+  SET_METHOD(isolate, sys, "tid", TID);
   SET_METHOD(isolate, sys, "fork", Fork);
   SET_METHOD(isolate, sys, "exec", Exec);
   SET_METHOD(isolate, sys, "getsid", GetSid);
@@ -863,8 +859,6 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, sys, "RTLD_NOW", Integer::New(isolate, RTLD_NOW));
 #endif
 
-  //SET_METHOD(isolate, sys, "shmOpen", ShmOpen);
-  //SET_METHOD(isolate, sys, "shmUnlink", ShmUnlink);  
   SET_VALUE(isolate, sys, "CLOCK_MONOTONIC", Integer::New(isolate, 
     CLOCK_MONOTONIC));
   SET_VALUE(isolate, sys, "TFD_NONBLOCK", Integer::New(isolate, 
