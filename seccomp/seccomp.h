@@ -85,7 +85,8 @@ static void add_syscall(scmp_filter_ctx ctx, const char *syscall, uint32_t actio
 	}
 }
 
-void CreateFilter(const FunctionCallbackInfo<Value> &args);
+void Allow(const FunctionCallbackInfo<Value> &args);
+void Deny(const FunctionCallbackInfo<Value> &args);
 void GetName(const FunctionCallbackInfo<Value> &args);
 void GetNumber(const FunctionCallbackInfo<Value> &args);
 void Init(Isolate* isolate, Local<ObjectTemplate> target);
