@@ -797,6 +797,43 @@ void just::sys::DLClose(const FunctionCallbackInfo<Value> &args) {
 }
 #endif
 
+void just::sys::FExecVE(const FunctionCallbackInfo<Value> &args) {
+  Isolate* isolate = args.GetIsolate();
+  int fd = Local<Integer>::Cast(args[0])->Value();
+  Local<Array> arguments = args[1].As<Array>();
+  int len = arguments->Length();
+  char** argv = (char**)calloc(len + 1, sizeof(char*));
+  Local<Context> context = isolate->GetCurrentContext();
+  int written = 0;
+  for (int i = 0; i < len; i++) {
+    Local<String> val = 
+      arguments->Get(context, i).ToLocalChecked().As<v8::String>();
+    argv[i] = (char*)calloc(1, val->Length() + 1);
+    val->WriteUtf8(isolate, argv[i], val->Length() + 1, &written, 
+      v8::String::HINT_MANY_WRITES_EXPECTED);
+  }
+  argv[len] = NULL;
+  Local<Array> env = args[2].As<Array>();
+  len = env->Length();
+  char** envv = (char**)calloc(len + 1, sizeof(char*));
+  for (int i = 0; i < len; i++) {
+    Local<String> val = 
+      env->Get(context, i).ToLocalChecked().As<v8::String>();
+    envv[i] = (char*)calloc(1, val->Length() + 1);
+    val->WriteUtf8(isolate, envv[i], val->Length() + 1, &written, 
+      v8::String::HINT_MANY_WRITES_EXPECTED);
+  }
+  envv[len] = NULL;
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), fexecve(fd, argv, envv)));
+}
+
+void just::sys::MemFdCreate(const FunctionCallbackInfo<Value> &args) {
+  Isolate* isolate = args.GetIsolate();
+  v8::String::Utf8Value fname(isolate, args[0]);
+  int flags = Local<Integer>::Cast(args[1])->Value();
+  args.GetReturnValue().Set(Integer::New(isolate, memfd_create(*fname, flags)));
+}
+
 void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> sys = ObjectTemplate::New(isolate);
   SET_METHOD(isolate, sys, "getuid", GetUid);
@@ -806,7 +843,8 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, sys, "calloc", Calloc);
   SET_METHOD(isolate, sys, "shmopen", ShmOpen);
   SET_METHOD(isolate, sys, "shmunlink", ShmUnlink);
-
+  SET_METHOD(isolate, sys, "memfd_create", MemFdCreate);
+  SET_METHOD(isolate, sys, "fexecve", FExecVE);
   SET_METHOD(isolate, sys, "readString", ReadString);
   SET_METHOD(isolate, sys, "writeString", WriteString);
   SET_METHOD(isolate, sys, "getAddress", GetAddress);
@@ -883,6 +921,7 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, sys, "PROT_WRITE", Integer::New(isolate, PROT_WRITE));
   SET_VALUE(isolate, sys, "MAP_SHARED", Integer::New(isolate, MAP_SHARED));
   SET_VALUE(isolate, sys, "MAP_ANONYMOUS", Integer::New(isolate, MAP_ANONYMOUS));
+  SET_VALUE(isolate, sys, "MFD_CLOEXEC", Integer::New(isolate, MFD_CLOEXEC));
 
   SET_VALUE(isolate, sys, "RB_AUTOBOOT", Integer::New(isolate, RB_AUTOBOOT));
   SET_VALUE(isolate, sys, "RB_HALT_SYSTEM", Integer::New(isolate, RB_HALT_SYSTEM));

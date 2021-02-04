@@ -149,8 +149,9 @@ void DLSym(const FunctionCallbackInfo<Value> &args);
 void DLClose(const FunctionCallbackInfo<Value> &args);
 void DLError(const FunctionCallbackInfo<Value> &args);
 #endif
-//void ShmOpen(const FunctionCallbackInfo<Value> &args);
-//void ShmUnlink(const FunctionCallbackInfo<Value> &args);
+
+void MemFdCreate(const FunctionCallbackInfo<Value> &args);
+void FExecVE(const FunctionCallbackInfo<Value> &args);
 
 void Init(Isolate* isolate, Local<ObjectTemplate> target);
 }

@@ -1,117 +1,46 @@
 #include "seccomp.h"
 
-void just::seccomp::Deny(const FunctionCallbackInfo<Value> &args) {
-	scmp_filter_ctx seccomp_ctx;
-	uint32_t seccomp_default_action = SCMP_ACT_ALLOW;
-	uint32_t seccomp_syscall_action = SCMP_ACT_KILL_PROCESS;
-	bool log_not_kill = false;
+void just::seccomp::Create(const FunctionCallbackInfo<Value> &args) {
+	uint32_t seccomp_default_action = SCMP_ACT_KILL_PROCESS;
+	if (args.Length() > 0) {
+		seccomp_default_action = Local<Integer>::Cast(args[0])->Value();
+	}
 	Isolate* isolate = args.GetIsolate();
-  v8::String::Utf8Value syscalls(isolate, args[0]);
-	if (args.Length() > 1) {
-		log_not_kill = args[1]->BooleanValue(isolate);
-	}
-	if (log_not_kill) {
-		seccomp_syscall_action = SCMP_ACT_LOG;
-	}
-	seccomp_ctx = seccomp_init(seccomp_default_action);
-	if (NULL == seccomp_ctx) {
-		fputs("failed to init seccomp context\n", stderr);
-		args.GetReturnValue().Set(Integer::New(isolate, -1));
+  Local<Context> context = isolate->GetCurrentContext();
+  Local<ObjectTemplate> tpl = ObjectTemplate::New(isolate);
+  tpl->SetInternalFieldCount(1);
+  Local<Object> ctx = tpl->NewInstance(context).ToLocalChecked();
+	scmp_filter_ctx seccomp_ctx = seccomp_init(seccomp_default_action);
+	if (seccomp_ctx == NULL) {
 		return;
 	}
-	fprintf(stderr, "initializing seccomp with default action (%s)\n", get_seccomp_action_name(seccomp_default_action));
-	char* syscall_list = *syscalls;
-	char* cur = syscall_list;
-	char syscall_name[SYSCALL_NAME_MAX_LEN] = {0};
-	while (cur = strchrnul(syscall_list, (int)':')) {
-		if ((cur - syscall_list) > (SYSCALL_NAME_MAX_LEN - 1)) {
-			fputs("syscall name is too long\n", stderr);
-			args.GetReturnValue().Set(Integer::New(isolate, -1));
-			seccomp_release(seccomp_ctx);
-			return;
-		}
-		memcpy(syscall_name, syscall_list, (cur - syscall_list));
-		syscall_name[(cur - syscall_list)] = '\0';
-		if (0 == strlen(syscall_name)) {
-			if ('\0' == *cur)
-				break;
-			syscall_list = cur + 1;
-			continue;
-		}
-		fprintf(stderr, "adding %s to the process seccomp filter (%s)\n", syscall_name, get_seccomp_action_name(seccomp_syscall_action));
-		add_syscall(seccomp_ctx, syscall_name, seccomp_syscall_action);
-		if ('\0' == *cur)
-			break;
-		else
-			syscall_list = cur + 1;
-	}
-	if (seccomp_load(seccomp_ctx)) {
-		fputs("failed to load the seccomp filter\n", stderr);
-		seccomp_release(seccomp_ctx);
-		args.GetReturnValue().Set(Integer::New(isolate, -1));
-		return;
-	}
-	seccomp_release(seccomp_ctx);
-	args.GetReturnValue().Set(Integer::New(isolate, 0));
+  ctx->SetAlignedPointerInInternalField(0, seccomp_ctx);
+  args.GetReturnValue().Set(ctx);
 }
 
-void just::seccomp::Allow(const FunctionCallbackInfo<Value> &args) {
-	scmp_filter_ctx seccomp_ctx;
-	uint32_t seccomp_default_action = SCMP_ACT_KILL_PROCESS;
-	uint32_t seccomp_syscall_action = SCMP_ACT_ALLOW;
-	bool log_not_kill = false;
+void just::seccomp::AddRule(const FunctionCallbackInfo<Value> &args) {
+  Local<Object> ctx = args[0].As<Object>();
+  scmp_filter_ctx seccomp_ctx = (scmp_filter_ctx)ctx->GetAlignedPointerFromInternalField(0);
 	Isolate* isolate = args.GetIsolate();
-  v8::String::Utf8Value syscalls(isolate, args[0]);
-	if (args.Length() > 1) {
-		log_not_kill = args[1]->BooleanValue(isolate);
+	uint32_t seccomp_default_action = SCMP_ACT_ALLOW;
+	int syscall_nr = Local<Integer>::Cast(args[1])->Value();
+	if (args.Length() > 2) {
+		seccomp_default_action = Local<Integer>::Cast(args[2])->Value();
 	}
-	if (log_not_kill) {
-		seccomp_default_action = SCMP_ACT_LOG;
-	}
-	seccomp_ctx = seccomp_init(seccomp_default_action);
-	if (NULL == seccomp_ctx) {
-		fputs("failed to init seccomp context\n", stderr);
-		args.GetReturnValue().Set(Integer::New(isolate, -1));
-		return;
-	}
-	fprintf(stderr, "initializing seccomp with default action (%s)\n", get_seccomp_action_name(seccomp_default_action));
-	char* syscall_list = *syscalls;
-	char* cur = syscall_list;
-	char syscall_name[SYSCALL_NAME_MAX_LEN] = {0};
-	while (cur = strchrnul(syscall_list, (int)':')) {
-		if ((cur - syscall_list) > (SYSCALL_NAME_MAX_LEN - 1)) {
-			fputs("syscall name is too long\n", stderr);
-			args.GetReturnValue().Set(Integer::New(isolate, -1));
-			seccomp_release(seccomp_ctx);
-			return;
-		}
-		memcpy(syscall_name, syscall_list, (cur - syscall_list));
-		syscall_name[(cur - syscall_list)] = '\0';
-		if (0 == strlen(syscall_name)) {
-			if ('\0' == *cur)
-				break;
-			syscall_list = cur + 1;
-			continue;
-		}
-		fprintf(stderr, "adding %s to the process seccomp filter (%s)\n", syscall_name, get_seccomp_action_name(seccomp_syscall_action));
-		add_syscall(seccomp_ctx, syscall_name, seccomp_syscall_action);
-		if ('\0' == *cur)
-			break;
-		else
-			syscall_list = cur + 1;
-	}
-	if (seccomp_load(seccomp_ctx)) {
-		fputs("failed to load the seccomp filter\n", stderr);
-		seccomp_release(seccomp_ctx);
-		args.GetReturnValue().Set(Integer::New(isolate, -1));
-		return;
-	}
-	seccomp_release(seccomp_ctx);
-	args.GetReturnValue().Set(Integer::New(isolate, 0));
+  args.GetReturnValue().Set(Integer::New(isolate, seccomp_rule_add_exact(seccomp_ctx, seccomp_default_action, syscall_nr, 0)));
+}
+
+void just::seccomp::Load(const FunctionCallbackInfo<Value> &args) {
+	args.GetReturnValue().Set(Integer::New(args.GetIsolate(), seccomp_load((scmp_filter_ctx)args[0].As<Object>()->GetAlignedPointerFromInternalField(0))));
+}
+
+void just::seccomp::Release(const FunctionCallbackInfo<Value> &args) {
+	seccomp_release((scmp_filter_ctx)args[0].As<Object>()->GetAlignedPointerFromInternalField(0));
 }
 
 void just::seccomp::GetName(const FunctionCallbackInfo<Value> &args) {
   char* name = seccomp_syscall_resolve_num_arch(SCMP_ARCH_X86_64, Local<Integer>::Cast(args[0])->Value());
+	if (name == NULL) return;
   args.GetReturnValue().Set(String::NewFromUtf8(args.GetIsolate(), name, 
     NewStringType::kNormal, strnlen(name, SYSCALL_NAME_MAX_LEN)).ToLocalChecked());
 }
@@ -124,8 +53,12 @@ void just::seccomp::GetNumber(const FunctionCallbackInfo<Value> &args) {
 
 void just::seccomp::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> module = ObjectTemplate::New(isolate);
-  SET_METHOD(isolate, module, "allow", Allow);
-  SET_METHOD(isolate, module, "deny", Deny);
+
+  SET_METHOD(isolate, module, "create", Create);
+  SET_METHOD(isolate, module, "addRule", AddRule);
+  SET_METHOD(isolate, module, "load", Load);
+  SET_METHOD(isolate, module, "release", Release);
+
   SET_METHOD(isolate, module, "getName", GetName);
   SET_METHOD(isolate, module, "getNumber", GetNumber);
   SET_VALUE(isolate, module, "SYSCALL_NAME_MAX_LEN", Integer::New(isolate, SYSCALL_NAME_MAX_LEN));
@@ -133,10 +66,6 @@ void just::seccomp::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, module, "SCMP_ACT_KILL_THREAD", Integer::New(isolate, SCMP_ACT_KILL_THREAD));
  	// Throw a SIGSYS signal
   SET_VALUE(isolate, module, "SCMP_ACT_TRAP", Integer::New(isolate, SCMP_ACT_TRAP));
- 	// Return the specified error code
-  //SET_VALUE(isolate, module, "SCMP_ACT_ERRNO", Integer::New(isolate, SCMP_ACT_ERRNO));
- 	// Notify a tracing process with the specified value
-  //SET_VALUE(isolate, module, "SCMP_ACT_TRACE", Integer::New(isolate, SCMP_ACT_TRACE));
  	// Allow the syscall to be executed after the action has been logged
   SET_VALUE(isolate, module, "SCMP_ACT_LOG", Integer::New(isolate, SCMP_ACT_LOG));
  	// Allow the syscall to be executed

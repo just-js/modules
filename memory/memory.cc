@@ -129,22 +129,13 @@ void just::memory::GetAddress(const FunctionCallbackInfo<Value> &args) {
 
 void just::memory::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> module = ObjectTemplate::New(isolate);
-
   SET_METHOD(isolate, module, "readString", ReadString);
   SET_METHOD(isolate, module, "writeString", WriteString);
   SET_METHOD(isolate, module, "getAddress", GetAddress);
   SET_METHOD(isolate, module, "rawBuffer", RawBuffer);
   SET_METHOD(isolate, module, "readMemory", ReadMemory);
-
   SET_METHOD(isolate, module, "getMeta", GetMeta);
-
   SET_METHOD(isolate, module, "copy", Copy);
   SET_METHOD(isolate, module, "alloc", Alloc);
-  //SET_METHOD(isolate, module, "free", ReadMemory);
-  //SET_METHOD(isolate, module, "shmOpen", ReadMemory);
-  //SET_METHOD(isolate, module, "shmUnlink", ReadMemory);
-  //SET_METHOD(isolate, module, "mmap", ReadMemory);
-  //SET_METHOD(isolate, module, "munmap", ReadMemory);
-
   SET_MODULE(isolate, target, "memory", module);
 }
