@@ -16,10 +16,14 @@ void just::sys::WaitPID(const FunctionCallbackInfo<Value> &args) {
   std::shared_ptr<BackingStore> backing = ab->GetBackingStore();
   int *fields = static_cast<int *>(backing->Data());
   int pid = -1;
+  int flags = WNOHANG;
   if (args.Length() > 1) {
     pid = args[1]->IntegerValue(context).ToChecked();
   }
-  fields[1] = waitpid(pid, &fields[0], WNOHANG);
+  if (args.Length() > 2) {
+    flags = args[2]->IntegerValue(context).ToChecked();
+  }
+  fields[1] = waitpid(pid, &fields[0], flags);
   fields[0] = WEXITSTATUS(fields[0]); 
   args.GetReturnValue().Set(args[0]);
 }
@@ -896,7 +900,6 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, sys, "RTLD_LAZY", Integer::New(isolate, RTLD_LAZY));
   SET_VALUE(isolate, sys, "RTLD_NOW", Integer::New(isolate, RTLD_NOW));
 #endif
-
   SET_VALUE(isolate, sys, "CLOCK_MONOTONIC", Integer::New(isolate, 
     CLOCK_MONOTONIC));
   SET_VALUE(isolate, sys, "TFD_NONBLOCK", Integer::New(isolate, 
@@ -922,19 +925,21 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, sys, "MAP_SHARED", Integer::New(isolate, MAP_SHARED));
   SET_VALUE(isolate, sys, "MAP_ANONYMOUS", Integer::New(isolate, MAP_ANONYMOUS));
   SET_VALUE(isolate, sys, "MFD_CLOEXEC", Integer::New(isolate, MFD_CLOEXEC));
-
   SET_VALUE(isolate, sys, "RB_AUTOBOOT", Integer::New(isolate, RB_AUTOBOOT));
   SET_VALUE(isolate, sys, "RB_HALT_SYSTEM", Integer::New(isolate, RB_HALT_SYSTEM));
   SET_VALUE(isolate, sys, "RB_POWER_OFF", Integer::New(isolate, RB_POWER_OFF));
   SET_VALUE(isolate, sys, "RB_SW_SUSPEND", Integer::New(isolate, RB_SW_SUSPEND));
-
   SET_VALUE(isolate, sys, "TIOCNOTTY", Integer::New(isolate, TIOCNOTTY));
   SET_VALUE(isolate, sys, "TIOCSCTTY", Integer::New(isolate, TIOCSCTTY));
-
-// These don't work on alpine. will have to investigate why not
-//  SET_VALUE(isolate, sys, "BYTE_ORDER", Integer::New(isolate, __BYTE_ORDER));
-//  SET_VALUE(isolate, sys, "LITTLE_ENDIAN", Integer::New(isolate, __LITTLE_ENDIAN));
-//  SET_VALUE(isolate, sys, "BIG_ENDIAN", Integer::New(isolate, __BIG_ENDIAN));
+  SET_VALUE(isolate, sys, "WNOHANG", Integer::New(isolate, WNOHANG));
+  SET_VALUE(isolate, sys, "WUNTRACED", Integer::New(isolate, WUNTRACED));
+  SET_VALUE(isolate, sys, "WCONTINUED", Integer::New(isolate, WCONTINUED));
+#ifdef __BYTE_ORDER
+  // These don't work on alpine. will have to investigate why not
+  SET_VALUE(isolate, sys, "BYTE_ORDER", Integer::New(isolate, __BYTE_ORDER));
+  SET_VALUE(isolate, sys, "LITTLE_ENDIAN", Integer::New(isolate, __LITTLE_ENDIAN));
+  SET_VALUE(isolate, sys, "BIG_ENDIAN", Integer::New(isolate, __BIG_ENDIAN));
+#endif
   long cpus = sysconf(_SC_NPROCESSORS_ONLN);
   long physical_pages = sysconf(_SC_PHYS_PAGES);
   long page_size = sysconf(_SC_PAGESIZE);

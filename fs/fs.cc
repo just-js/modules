@@ -53,6 +53,17 @@ void just::fs::Mknod(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, mknod(*target, type | mode, dev)));
 }
 
+void just::fs::Mkfifo(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  String::Utf8Value target(isolate, args[0]);
+  unsigned int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+  if (args.Length() > 1) {
+    mode = Local<Integer>::Cast(args[1])->Value();
+  }
+  args.GetReturnValue().Set(Integer::New(isolate, mkfifo(*target, mode)));
+}
+
 void just::fs::Mount(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -274,6 +285,7 @@ void just::fs::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, fs, "mount", just::fs::Mount);
   SET_METHOD(isolate, fs, "umount", just::fs::Umount);
   SET_METHOD(isolate, fs, "mknod", just::fs::Mknod);
+  SET_METHOD(isolate, fs, "mkfifo", just::fs::Mkfifo);
   SET_METHOD(isolate, fs, "realpath", just::fs::Realpath);
   SET_METHOD(isolate, fs, "utime", just::fs::Utime);
 
