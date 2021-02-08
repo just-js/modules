@@ -29,6 +29,7 @@ static int bcount = 0;
 
 void ReadString(const FunctionCallbackInfo<Value> &args);
 void WriteString(const FunctionCallbackInfo<Value> &args);
+void WritePointer(const FunctionCallbackInfo<Value> &args);
 void GetAddress(const FunctionCallbackInfo<Value> &args);
 void ReadMemory(const FunctionCallbackInfo<Value> &args);
 void RawBuffer(const FunctionCallbackInfo<Value> &args);
