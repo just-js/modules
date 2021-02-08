@@ -164,6 +164,14 @@ void just::sys::Kill(const FunctionCallbackInfo<Value>& args) {
   args.GetReturnValue().Set(Integer::New(isolate, kill(pid, signum)));
 }
 
+void just::sys::Getchar(const FunctionCallbackInfo<Value>& args) {
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), getchar()));
+}
+
+void just::sys::Putchar(const FunctionCallbackInfo<Value>& args) {
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), putchar(Local<Integer>::Cast(args[0])->Value())));
+}
+
 //TODO: CPU Info:
 /*
 https://github.com/nodejs/node/blob/4438852aa16689b841e5ffbca4a24fc36a0fe33c/src/node_os.cc#L101
@@ -838,6 +846,29 @@ void just::sys::MemFdCreate(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, memfd_create(*fname, flags)));
 }
 
+void just::sys::SetTerminalFlags(const FunctionCallbackInfo<Value> &args) {
+  int fd = Local<Integer>::Cast(args[0])->Value();
+  int flags = Local<Integer>::Cast(args[1])->Value();
+  int action = TCSAFLUSH;
+  if (args.Length() > 2) {
+    action = Local<Integer>::Cast(args[2])->Value();
+  }
+  struct termios orig_termios;
+  tcgetattr(fd, &orig_termios);
+  struct termios raw = orig_termios;
+  //raw.c_lflag &= ~(ECHO | ICANON);
+  //raw.c_lflag &= flags;
+  raw.c_lflag = flags;
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), tcsetattr(fd, action, &raw)));
+}
+
+void just::sys::GetTerminalFlags(const FunctionCallbackInfo<Value> &args) {
+  int fd = Local<Integer>::Cast(args[0])->Value();
+  struct termios orig;
+  tcgetattr(fd, &orig);
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), orig.c_lflag));
+}
+
 void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> sys = ObjectTemplate::New(isolate);
   SET_METHOD(isolate, sys, "getuid", GetUid);
@@ -845,6 +876,8 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, sys, "getgid", GetGid);
   SET_METHOD(isolate, sys, "setgid", SetGid);
   SET_METHOD(isolate, sys, "calloc", Calloc);
+  SET_METHOD(isolate, sys, "setTerminalFlags", SetTerminalFlags);
+  SET_METHOD(isolate, sys, "getTerminalFlags", GetTerminalFlags);
   SET_METHOD(isolate, sys, "shmopen", ShmOpen);
   SET_METHOD(isolate, sys, "shmunlink", ShmUnlink);
   SET_METHOD(isolate, sys, "memfd_create", MemFdCreate);
@@ -872,6 +905,8 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, sys, "getsid", GetSid);
   SET_METHOD(isolate, sys, "setsid", SetSid);
   SET_METHOD(isolate, sys, "errno", Errno);
+  SET_METHOD(isolate, sys, "getchar", Getchar);
+  SET_METHOD(isolate, sys, "putchar", Putchar);
   SET_METHOD(isolate, sys, "strerror", StrError);
   SET_METHOD(isolate, sys, "cpuUsage", CPUUsage);
   SET_METHOD(isolate, sys, "getrUsage", GetrUsage);

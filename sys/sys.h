@@ -10,6 +10,7 @@
 #include <sys/timerfd.h>
 #include <sys/reboot.h>
 #include <sys/syscall.h>
+#include <termios.h>
 #ifndef STATIC
 #include <dlfcn.h>
 #endif
@@ -110,6 +111,10 @@ void SetSid(const FunctionCallbackInfo<Value> &args);
 void Errno(const FunctionCallbackInfo<Value> &args);
 void StrError(const FunctionCallbackInfo<Value> &args);
 void Sleep(const FunctionCallbackInfo<Value> &args);
+void Getchar(const FunctionCallbackInfo<Value> &args);
+void Putchar(const FunctionCallbackInfo<Value> &args);
+void SetTerminalFlags(const FunctionCallbackInfo<Value> &args);
+void GetTerminalFlags(const FunctionCallbackInfo<Value> &args);
 void ShmOpen(const FunctionCallbackInfo<Value> &args);
 void ShmUnlink(const FunctionCallbackInfo<Value> &args);
 void USleep(const FunctionCallbackInfo<Value> &args);
