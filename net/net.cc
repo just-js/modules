@@ -20,9 +20,21 @@ void just::net::SetSockOpt(const FunctionCallbackInfo<Value> &args) {
   int fd = args[0]->Int32Value(context).ToChecked();
   int level = args[1]->Int32Value(context).ToChecked();
   int option = args[2]->Int32Value(context).ToChecked();
-  int value = args[3]->Int32Value(context).ToChecked();
+  if (args[3]->IsNumber()) {
+    int value = args[3]->Int32Value(context).ToChecked();
+    args.GetReturnValue().Set(Integer::New(isolate, setsockopt(fd, level, 
+      option, &value, sizeof(int))));
+    return;
+  }
+  Local<ArrayBuffer> buf = args[3].As<ArrayBuffer>();
+  std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
+  int size = backing->ByteLength();
+  if (args.Length() > 4) {
+    size = args[4]->Int32Value(context).ToChecked();
+  }
   args.GetReturnValue().Set(Integer::New(isolate, setsockopt(fd, level, 
-    option, &value, sizeof(int))));
+    option, backing->Data(), size)));
+  return;
 }
 
 void just::net::GetSockOpt(const FunctionCallbackInfo<Value> &args) {
@@ -510,6 +522,8 @@ void just::net::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, net, "SO_ERROR", Integer::New(isolate, SO_ERROR));
   SET_VALUE(isolate, net, "SO_REUSEADDR", Integer::New(isolate, SO_REUSEADDR));
   SET_VALUE(isolate, net, "SO_REUSEPORT", Integer::New(isolate, SO_REUSEPORT));
+  SET_VALUE(isolate, net, "SO_ATTACH_FILTER", Integer::New(isolate, SO_ATTACH_FILTER));
+
   SET_VALUE(isolate, net, "SO_INCOMING_CPU", Integer::New(isolate, 
     SO_INCOMING_CPU));
   SET_VALUE(isolate, net, "IPPROTO_TCP", Integer::New(isolate, IPPROTO_TCP));

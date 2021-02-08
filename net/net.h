@@ -10,6 +10,7 @@
 #include <linux/if_packet.h>
 #include <netinet/tcp.h>
 #include <netinet/if_ether.h>
+#include <sys/types.h>
 
 namespace just {
 
