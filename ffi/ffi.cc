@@ -7,7 +7,7 @@ void just::ffi::FfiPrepCif(const FunctionCallbackInfo<Value> &args) {
   HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();
   Local<ArrayBuffer> cb = args[0].As<ArrayBuffer>();
-  int rtype = args[1]->Int32Value(context).ToChecked();
+  int rtype = Local<Integer>::Cast(args[1])->Value();
   Local<Array> params = args[2].As<Array>();
   ffi_status status;
   ffi_abi abi = FFI_DEFAULT_ABI;
@@ -18,8 +18,7 @@ void just::ffi::FfiPrepCif(const FunctionCallbackInfo<Value> &args) {
   ffi_type** argtypes = (ffi_type**)calloc(nargs, sizeof(ffi_type));
   for (unsigned int i = 0; i < nargs; i++) {
     Local<Value> p = params->Get(context, i).ToLocalChecked();
-    int rtype = p->Int32Value(context).ToChecked();
-    argtypes[i] = just_ffi_types[rtype];
+    argtypes[i] = just_ffi_types[Local<Integer>::Cast(p)->Value()];
   }
   status = ffi_prep_cif(cif, abi, nargs, just_ffi_types[rtype], argtypes);
   if (status != FFI_OK) {
@@ -32,20 +31,15 @@ void just::ffi::FfiPrepCif(const FunctionCallbackInfo<Value> &args) {
 
 void just::ffi::FfiCall(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   Local<ArrayBuffer> cb = args[0].As<ArrayBuffer>();
   Local<BigInt> address64 = Local<BigInt>::Cast(args[1]);
   void* fn = reinterpret_cast<void*>(address64->Uint64Value());
   ffi_cif* cif = (ffi_cif*)cb->GetAlignedPointerFromInternalField(1);
   ffi_arg result;
-  void* start = cb->GetAlignedPointerFromInternalField(0);
-  if (!start) {
-    std::shared_ptr<BackingStore> backing = cb->GetBackingStore();
-    void* start = backing->Data();
-    cb->SetAlignedPointerInInternalField(0, start);
-  }
-  void** values = &start;
-  ffi_call(cif, FFI_FN(fn), &result, values);
+  std::shared_ptr<BackingStore> backing = cb->GetBackingStore();
+  void** start = (void**)backing->Data();
+  //cb->SetAlignedPointerInInternalField(0, start);
+  ffi_call(cif, FFI_FN(fn), &result, start);
   if (cif->rtype == just_ffi_types[FFI_TYPE_UINT32]) {
     args.GetReturnValue().Set(Integer::New(isolate, (uint32_t)result));
     return;
@@ -68,6 +62,10 @@ void just::ffi::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   just_ffi_types[FFI_TYPE_UINT32] = &ffi_type_uint32;
   just_ffi_types[FFI_TYPE_DOUBLE] = &ffi_type_double;
   just_ffi_types[FFI_TYPE_POINTER] = &ffi_type_pointer;
+  just_ffi_types[FFI_TYPE_VOID] = &ffi_type_void;
+  just_ffi_types[FFI_TYPE_UINT64] = &ffi_type_uint64;
+  just_ffi_types[FFI_TYPE_SINT32] = &ffi_type_sint32;
+  just_ffi_types[FFI_TYPE_COMPLEX] = &ffi_type_complex_double;
 
   SET_VALUE(isolate, module, "FFI_UNIX64", Integer::New(isolate, FFI_UNIX64));
   SET_VALUE(isolate, module, "FFI_OK", Integer::New(isolate, FFI_OK));

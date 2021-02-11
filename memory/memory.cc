@@ -84,17 +84,14 @@ void just::memory::WriteString(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, str->WriteUtf8(isolate, dest, len, &nchars, v8::String::HINT_MANY_WRITES_EXPECTED | v8::String::NO_NULL_TERMINATION)));
 }
 
-/*
 void just::memory::WritePointer(const FunctionCallbackInfo<Value> &args) {
   just::memory::rawBuffer* dest = just::memory::buffers[Local<Integer>::Cast(args[0])->Value()];
   int off = Local<Integer>::Cast(args[1])->Value();
   just::memory::rawBuffer* src = just::memory::buffers[Local<Integer>::Cast(args[2])->Value()];
-  fprintf(stderr, "%lu\n", (uint64_t)src->data);
   char* ptr = (char*)dest->data + off;
   *reinterpret_cast<void **>(ptr) = src->data;
 }
-*/
-
+/*
 void just::memory::WritePointer(const FunctionCallbackInfo<Value> &args) {
   just::memory::rawBuffer* dest = just::memory::buffers[Local<Integer>::Cast(args[0])->Value()];
   int off = Local<Integer>::Cast(args[1])->Value();
@@ -103,7 +100,7 @@ void just::memory::WritePointer(const FunctionCallbackInfo<Value> &args) {
   uint64_t* address = (uint64_t*)ptr;
   *address = (uint64_t)src->data;
 }
-
+*/
 void just::memory::ReadString(const FunctionCallbackInfo<Value> &args) {
   just::memory::rawBuffer* b = just::memory::buffers[Local<Integer>::Cast(args[0])->Value()];
   int len = b->len;

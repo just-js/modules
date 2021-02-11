@@ -468,6 +468,7 @@ void just::sys::Utf8Length(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, args[0].As<String>()->Utf8Length(isolate)));
 }
 
+// todo: aligned_alloc
 void just::sys::Calloc(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -643,13 +644,7 @@ void just::sys::ReadMemory(const FunctionCallbackInfo<Value> &args) {
   Local<BigInt> end64 = Local<BigInt>::Cast(args[1]);
   const uint64_t size = end64->Uint64Value() - start64->Uint64Value();
   void* start = reinterpret_cast<void*>(start64->Uint64Value());
-  // TODO: is this correct? will it leak?
-  // todo: we should pass the buffer in. change all code where we create objects like this
-  std::unique_ptr<BackingStore> backing =
-      ArrayBuffer::NewBackingStore(start, size, 
-        just::UnwrapMemory, nullptr);
-  Local<ArrayBuffer> ab =
-      ArrayBuffer::New(isolate, std::move(backing));
+  Local<ArrayBuffer> ab = ArrayBuffer::New(isolate, start, size, v8::ArrayBufferCreationMode::kExternalized);
   args.GetReturnValue().Set(ab);
 }
 
