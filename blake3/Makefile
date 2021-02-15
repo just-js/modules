@@ -15,13 +15,13 @@ deps: ## dependencies
 	tar -zxvf deps/blake3-$(BLAKE3_VERSION).tar.gz	-C deps/
 
 libs: deps ## compile the object files 
-	$(C) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/BLAKE3-$(BLAKE3_VERSION)/c -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter deps/BLAKE3-$(BLAKE3_VERSION)/c/blake3.c
-	$(C) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/BLAKE3-$(BLAKE3_VERSION)/c -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter deps/BLAKE3-$(BLAKE3_VERSION)/c/blake3_dispatch.c
-	$(C) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/BLAKE3-$(BLAKE3_VERSION)/c -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter deps/BLAKE3-$(BLAKE3_VERSION)/c/blake3_portable.c
-	$(C) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/BLAKE3-$(BLAKE3_VERSION)/c -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter deps/BLAKE3-$(BLAKE3_VERSION)/c/blake3_sse41_x86-64_unix.S
-	$(C) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/BLAKE3-$(BLAKE3_VERSION)/c -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter deps/BLAKE3-$(BLAKE3_VERSION)/c/blake3_avx2_x86-64_unix.S
-	$(C) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/BLAKE3-$(BLAKE3_VERSION)/c -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter deps/BLAKE3-$(BLAKE3_VERSION)/c/blake3_avx512_x86-64_unix.S
-	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/BLAKE3-$(BLAKE3_VERSION)/c -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter -o blake3_lib.o ${MODULE}.cc
+	$(C) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -Ideps/BLAKE3-$(BLAKE3_VERSION)/c -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter deps/BLAKE3-$(BLAKE3_VERSION)/c/blake3.c
+	$(C) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -Ideps/BLAKE3-$(BLAKE3_VERSION)/c -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter deps/BLAKE3-$(BLAKE3_VERSION)/c/blake3_dispatch.c
+	$(C) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -Ideps/BLAKE3-$(BLAKE3_VERSION)/c -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter deps/BLAKE3-$(BLAKE3_VERSION)/c/blake3_portable.c
+	$(C) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -Ideps/BLAKE3-$(BLAKE3_VERSION)/c -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter deps/BLAKE3-$(BLAKE3_VERSION)/c/blake3_sse41_x86-64_unix.S
+	$(C) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -Ideps/BLAKE3-$(BLAKE3_VERSION)/c -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter deps/BLAKE3-$(BLAKE3_VERSION)/c/blake3_avx2_x86-64_unix.S
+	$(C) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -Ideps/BLAKE3-$(BLAKE3_VERSION)/c -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter deps/BLAKE3-$(BLAKE3_VERSION)/c/blake3_avx512_x86-64_unix.S
+	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -Ideps/BLAKE3-$(BLAKE3_VERSION)/c -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter -o blake3_lib.o ${MODULE}.cc
 
 library: ## build shared library
 	make libs

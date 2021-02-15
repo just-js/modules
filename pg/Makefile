@@ -20,11 +20,11 @@ deps/postgresql-12.3/src/interfaces/libpq/libpq.a: deps
 	cd deps/postgresql-12.3 && make -C src/interfaces
 
 library: deps/postgresql-12.3/src/interfaces/libpq/libpq.a ## build shared library
-	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/postgresql-12.3/src/include -Ideps/postgresql-12.3/src -Ideps/postgresql-12.3/src/interfaces/libpq -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
+	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -Ideps/postgresql-12.3/src/include -Ideps/postgresql-12.3/src -Ideps/postgresql-12.3/src/interfaces/libpq -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
 	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group ${MODULE}.o deps/postgresql-12.3/src/interfaces/libpq/libpq.a deps/postgresql-12.3/src/port/libpgport_shlib.a deps/postgresql-12.3/src/common/libpgcommon_shlib.a -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
 
 library-debug: deps/postgresql-12.3/src/interfaces/libpq/libpq.a ## build shared library
-	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/postgresql-12.3/src/include -Ideps/postgresql-12.3/src -Ideps/postgresql-12.3/src/interfaces/libpq -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
+	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -Ideps/postgresql-12.3/src/include -Ideps/postgresql-12.3/src -Ideps/postgresql-12.3/src/interfaces/libpq -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
 	$(CC) -g -shared -flto -pthread -m64 -Wl,--start-group ${MODULE}.o deps/postgresql-12.3/src/interfaces/libpq/libpq.a deps/postgresql-12.3/src/port/libpgport_shlib.a deps/postgresql-12.3/src/common/libpgcommon_shlib.a -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
 
 clean: ## tidy up

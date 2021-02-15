@@ -17,11 +17,11 @@ deps: ## dependencies
 	make -C deps/tcc-${TCC_VERSION}/ libtcc.a
 
 library: deps ## build shared library
-	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/tcc-${TCC_VERSION} -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
+	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -Ideps/tcc-${TCC_VERSION} -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
 	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group ${MODULE}.o deps/tcc-${TCC_VERSION}/libtcc.a -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
 
 library-debug: deps ## build shared library
-	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -Ideps/tcc-${TCC_VERSION} -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
+	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -Ideps/tcc-${TCC_VERSION} -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
 	$(CC) -g -shared -flto -pthread -m64 -Wl,--start-group ${MODULE}.o deps/tcc-${TCC_VERSION}/libtcc.a -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
 
 clean: ## tidy up

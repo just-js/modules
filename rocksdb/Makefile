@@ -18,11 +18,11 @@ deps/rocksdb-6.10.2/librocksdb.a: deps ## dependencies
 	CFLAGS='-mstackrealign -fPIC -O3' make -C deps/rocksdb-6.10.2/ static_lib
 
 library: deps/rocksdb-6.10.2/librocksdb.a ## build shared library
-	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/rocksdb-6.10.2/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
+	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/rocksdb-6.10.2/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
 	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group ${MODULE}.o deps/rocksdb-6.10.2/librocksdb.a -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
 
 library-debug: deps/rocksdb-6.10.2/librocksdb.a ## build shared library
-	$(CC) -c -fPIC -std=c++11 -DV8_COMPRESS_POINTERS -I. -Ideps/rocksdb-6.10.2/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
+	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/rocksdb-6.10.2/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
 	$(CC) -g -shared -flto -pthread -m64 -Wl,--start-group ${MODULE}.o deps/rocksdb-6.10.2/librocksdb.a -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
 
 clean: ## tidy up
