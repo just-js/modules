@@ -46,7 +46,7 @@ void just::tcc::Compile(const FunctionCallbackInfo<Value> &args) {
   }
   if (tcc_compile_string(s, *my_program) == -1) {
       fprintf(stderr, "Could not compile\n");
-      exit(1);
+      return;
   }
   args.GetReturnValue().Set(BigInt::New(isolate, (uint64_t)s));
 }
@@ -60,7 +60,7 @@ void just::tcc::GetSymbol(const FunctionCallbackInfo<Value> &args) {
   void* func = tcc_get_symbol(s, *name);
   if (!func) {
     fprintf(stderr, "Could not get symbol\n");
-    exit(1);
+    return;
   }
   args.GetReturnValue().Set(BigInt::New(isolate, (uint64_t)func));
 }

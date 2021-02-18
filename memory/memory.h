@@ -36,6 +36,7 @@ void RawBuffer(const FunctionCallbackInfo<Value> &args);
 void Alloc(const FunctionCallbackInfo<Value> &args);
 void Copy(const FunctionCallbackInfo<Value> &args);
 void GetMeta(const FunctionCallbackInfo<Value> &args);
+void MemFdCreate(const FunctionCallbackInfo<Value> &args);
 
 void Init(Isolate* isolate, Local<ObjectTemplate> target);
 }

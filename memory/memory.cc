@@ -144,6 +144,13 @@ void just::memory::GetAddress(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(BigInt::New(args.GetIsolate(), (uint64_t)b->data));
 }
 
+void just::memory::MemFdCreate(const FunctionCallbackInfo<Value> &args) {
+  Isolate* isolate = args.GetIsolate();
+  v8::String::Utf8Value fname(isolate, args[0]);
+  int flags = Local<Integer>::Cast(args[1])->Value();
+  args.GetReturnValue().Set(Integer::New(isolate, memfd_create(*fname, flags)));
+}
+
 void just::memory::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> module = ObjectTemplate::New(isolate);
   SET_METHOD(isolate, module, "readString", ReadString);
@@ -153,6 +160,7 @@ void just::memory::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, module, "rawBuffer", RawBuffer);
   SET_METHOD(isolate, module, "readMemory", ReadMemory);
   SET_METHOD(isolate, module, "getMeta", GetMeta);
+  SET_METHOD(isolate, module, "memfdCreate", MemFdCreate);
   SET_METHOD(isolate, module, "copy", Copy);
   SET_METHOD(isolate, module, "alloc", Alloc);
   SET_MODULE(isolate, target, "memory", module);

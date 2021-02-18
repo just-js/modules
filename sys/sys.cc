@@ -834,13 +834,6 @@ void just::sys::FExecVE(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(args.GetIsolate(), fexecve(fd, argv, envv)));
 }
 
-void just::sys::MemFdCreate(const FunctionCallbackInfo<Value> &args) {
-  Isolate* isolate = args.GetIsolate();
-  v8::String::Utf8Value fname(isolate, args[0]);
-  int flags = Local<Integer>::Cast(args[1])->Value();
-  args.GetReturnValue().Set(Integer::New(isolate, memfd_create(*fname, flags)));
-}
-
 void just::sys::SetTerminalFlags(const FunctionCallbackInfo<Value> &args) {
   int fd = Local<Integer>::Cast(args[0])->Value();
   int flags = Local<Integer>::Cast(args[1])->Value();
@@ -875,7 +868,6 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, sys, "getTerminalFlags", GetTerminalFlags);
   SET_METHOD(isolate, sys, "shmopen", ShmOpen);
   SET_METHOD(isolate, sys, "shmunlink", ShmUnlink);
-  SET_METHOD(isolate, sys, "memfd_create", MemFdCreate);
   SET_METHOD(isolate, sys, "fexecve", FExecVE);
   SET_METHOD(isolate, sys, "readString", ReadString);
   SET_METHOD(isolate, sys, "writeString", WriteString);

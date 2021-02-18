@@ -155,7 +155,6 @@ void DLClose(const FunctionCallbackInfo<Value> &args);
 void DLError(const FunctionCallbackInfo<Value> &args);
 #endif
 
-void MemFdCreate(const FunctionCallbackInfo<Value> &args);
 void FExecVE(const FunctionCallbackInfo<Value> &args);
 
 void Init(Isolate* isolate, Local<ObjectTemplate> target);
