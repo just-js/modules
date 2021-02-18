@@ -163,5 +163,6 @@ void just::memory::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, module, "memfdCreate", MemFdCreate);
   SET_METHOD(isolate, module, "copy", Copy);
   SET_METHOD(isolate, module, "alloc", Alloc);
+  SET_VALUE(isolate, module, "MFD_CLOEXEC", Integer::New(isolate, MFD_CLOEXEC));
   SET_MODULE(isolate, target, "memory", module);
 }
