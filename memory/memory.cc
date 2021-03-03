@@ -84,6 +84,16 @@ void just::memory::WriteString(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, str->WriteUtf8(isolate, dest, len, &nchars, v8::String::HINT_MANY_WRITES_EXPECTED | v8::String::NO_NULL_TERMINATION)));
 }
 
+void just::memory::WriteCString(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  just::memory::rawBuffer* b = just::memory::buffers[Local<Integer>::Cast(args[0])->Value()];
+  Local<String> str = args[1].As<String>();
+  int len = str->Length();
+  int off = 0;
+  if (args.Length() > 2) off = Local<Integer>::Cast(args[2])->Value();
+  args.GetReturnValue().Set(Integer::New(isolate, str->WriteOneByte(isolate, (uint8_t*)b->data, off, len, v8::String::HINT_MANY_WRITES_EXPECTED)));
+}
+
 void just::memory::WritePointer(const FunctionCallbackInfo<Value> &args) {
   just::memory::rawBuffer* dest = just::memory::buffers[Local<Integer>::Cast(args[0])->Value()];
   int off = Local<Integer>::Cast(args[1])->Value();
@@ -91,16 +101,7 @@ void just::memory::WritePointer(const FunctionCallbackInfo<Value> &args) {
   char* ptr = (char*)dest->data + off;
   *reinterpret_cast<void **>(ptr) = src->data;
 }
-/*
-void just::memory::WritePointer(const FunctionCallbackInfo<Value> &args) {
-  just::memory::rawBuffer* dest = just::memory::buffers[Local<Integer>::Cast(args[0])->Value()];
-  int off = Local<Integer>::Cast(args[1])->Value();
-  just::memory::rawBuffer* src = just::memory::buffers[Local<Integer>::Cast(args[2])->Value()];
-  char* ptr = (char*)dest->data + off;
-  uint64_t* address = (uint64_t*)ptr;
-  *address = (uint64_t)src->data;
-}
-*/
+
 void just::memory::ReadString(const FunctionCallbackInfo<Value> &args) {
   just::memory::rawBuffer* b = just::memory::buffers[Local<Integer>::Cast(args[0])->Value()];
   int len = b->len;
@@ -156,6 +157,7 @@ void just::memory::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, module, "readString", ReadString);
   SET_METHOD(isolate, module, "writePointer", WritePointer);
   SET_METHOD(isolate, module, "writeString", WriteString);
+  SET_METHOD(isolate, module, "writeCString", WriteCString);
   SET_METHOD(isolate, module, "getAddress", GetAddress);
   SET_METHOD(isolate, module, "rawBuffer", RawBuffer);
   SET_METHOD(isolate, module, "readMemory", ReadMemory);

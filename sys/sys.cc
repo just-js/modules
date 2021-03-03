@@ -56,6 +56,21 @@ void just::sys::Setenv(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, setenv(*name, *value, 1)));
 }
 
+void just::sys::Getenv(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  String::Utf8Value name(isolate, args[0]);
+  char* value = getenv(*name);
+  args.GetReturnValue().Set(String::NewFromUtf8(isolate, 
+    value, v8::NewStringType::kNormal, 
+    strnlen(value, 1024)).ToLocalChecked());
+}
+
+void just::sys::Unsetenv(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  String::Utf8Value name(isolate, args[0]);
+  args.GetReturnValue().Set(Integer::New(isolate, unsetenv(*name)));
+}
+
 void just::sys::Spawn(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -913,7 +928,9 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, sys, "mmap", MMap);
   SET_METHOD(isolate, sys, "munmap", MUnmap);
   SET_METHOD(isolate, sys, "reboot", Reboot);
+  SET_METHOD(isolate, sys, "getenv", Getenv);
   SET_METHOD(isolate, sys, "setenv", Setenv);
+  SET_METHOD(isolate, sys, "unsetenv", Unsetenv);
 #ifndef STATIC
   SET_METHOD(isolate, sys, "dlopen", DLOpen);
   SET_METHOD(isolate, sys, "dlsym", DLSym);

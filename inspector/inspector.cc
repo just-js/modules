@@ -6,7 +6,7 @@ void just::inspector::Enable(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();
-  client = new InspectorClient(context, true);
+  client = new just::inspector::InspectorClient(context, true);
 }
 
 void just::inspector::Init(Isolate* isolate, Local<ObjectTemplate> target) {

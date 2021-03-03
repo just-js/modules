@@ -217,7 +217,7 @@ void just::vm::RunModule(const FunctionCallbackInfo<Value> &args) {
 void just::vm::RunScript(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
+  Local<Context> context = isolate->GetEnteredOrMicrotaskContext();
   TryCatch try_catch(isolate);
   Local<String> source = args[0].As<String>();
   Local<String> path = args[1].As<String>();
@@ -249,6 +249,7 @@ void just::vm::RunScript(const FunctionCallbackInfo<Value> &args) {
 
 void just::vm::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> vm = ObjectTemplate::New(isolate);
+  // TODO: compile and compileInContext should switch names
   SET_METHOD(isolate, vm, "compile", just::vm::CompileScript);
   SET_METHOD(isolate, vm, "runModule", just::vm::RunModule);
   SET_METHOD(isolate, vm, "runScript", just::vm::RunScript);

@@ -1,4 +1,4 @@
-#include "ffi_just.h"
+  #include "ffi_just.h"
 
 static ffi_type* just_ffi_types[16];
 
@@ -31,14 +31,16 @@ void just::ffi::FfiPrepCif(const FunctionCallbackInfo<Value> &args) {
 
 void just::ffi::FfiCall(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
+  if (!args[0]->IsArrayBuffer() || !args[1]->IsBigInt()) {
+    args.GetReturnValue().Set(BigInt::New(isolate, -1));
+    return;
+  }
   Local<ArrayBuffer> cb = args[0].As<ArrayBuffer>();
-  Local<BigInt> address64 = Local<BigInt>::Cast(args[1]);
-  void* fn = reinterpret_cast<void*>(address64->Uint64Value());
+  void* fn = reinterpret_cast<void*>(Local<BigInt>::Cast(args[1])->Uint64Value());
   ffi_cif* cif = (ffi_cif*)cb->GetAlignedPointerFromInternalField(1);
   ffi_arg result;
   std::shared_ptr<BackingStore> backing = cb->GetBackingStore();
   void** start = (void**)backing->Data();
-  //cb->SetAlignedPointerInInternalField(0, start);
   ffi_call(cif, FFI_FN(fn), &result, start);
   if (cif->rtype == just_ffi_types[FFI_TYPE_UINT32]) {
     args.GetReturnValue().Set(Integer::New(isolate, (uint32_t)result));

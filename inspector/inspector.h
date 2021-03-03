@@ -68,7 +68,7 @@ class InspectorFrontend final : public V8Inspector::Channel {
       v8::TryCatch try_catch(isolate_);
       Local<Value> args[] = {message};
       Local<Function>::Cast(callback)->Call(context, Undefined(isolate_), 1, 
-        args).ToLocalChecked();
+        args).FromMaybe(Local<Value>());
     }
   }
 
@@ -106,7 +106,7 @@ class InspectorClient : public V8InspectorClient {
       v8::TryCatch try_catch(isolate_);
       Local<Value> args[1] = {Integer::New(isolate_, 0)};
       Local<Function>::Cast(callback)->Call(context, Undefined(isolate_), 0, 
-        args).ToLocalChecked();
+        args).FromMaybe(Local<Value>());
     }
   }
 
@@ -120,7 +120,7 @@ class InspectorClient : public V8InspectorClient {
       v8::TryCatch try_catch(isolate_);
       Local<Value> args[1] = {Integer::New(isolate_, 0)};
       Local<Function>::Cast(callback)->Call(context, Undefined(isolate_), 0, 
-        args).ToLocalChecked();
+        args).FromMaybe(Local<Value>());
     }
   }
 

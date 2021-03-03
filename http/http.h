@@ -9,7 +9,7 @@ namespace just {
 namespace http {
 
 typedef struct httpContext httpContext;
-#define MAX_PIPELINE 1024
+#define MAX_PIPELINE 4096
 #define JUST_MAX_HEADERS 32
 
 struct httpContext {
@@ -31,7 +31,9 @@ struct httpContext {
 thread_local httpContext state[MAX_PIPELINE];
 
 void GetUrl(const FunctionCallbackInfo<Value> &args);
+void GetVersion(const FunctionCallbackInfo<Value> &args);
 void GetMethod(const FunctionCallbackInfo<Value> &args);
+void GetMethodAndUrl(const FunctionCallbackInfo<Value> &args);
 void GetStatusCode(const FunctionCallbackInfo<Value> &args);
 void GetStatusMessage(const FunctionCallbackInfo<Value> &args);
 void GetHeaders(const FunctionCallbackInfo<Value> &args);

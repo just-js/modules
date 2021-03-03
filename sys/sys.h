@@ -138,7 +138,9 @@ void ReadMemory(const FunctionCallbackInfo<Value> &args);
 void MMap(const FunctionCallbackInfo<Value> &args);
 void MUnmap(const FunctionCallbackInfo<Value> &args);
 void Reboot(const FunctionCallbackInfo<Value> &args);
+void Getenv(const FunctionCallbackInfo<Value> &args);
 void Setenv(const FunctionCallbackInfo<Value> &args);
+void Unsetenv(const FunctionCallbackInfo<Value> &args);
 
 void GetPgrp(const FunctionCallbackInfo<Value> &args);
 void SetPgid(const FunctionCallbackInfo<Value> &args);
