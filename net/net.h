@@ -11,6 +11,7 @@
 #include <netinet/tcp.h>
 #include <netinet/if_ether.h>
 #include <sys/types.h>
+#include <sys/sendfile.h>
 
 namespace just {
 
@@ -28,11 +29,14 @@ void Bind(const FunctionCallbackInfo<Value> &args);
 void BindInterface(const FunctionCallbackInfo<Value> &args);
 void GetMacAddress(const FunctionCallbackInfo<Value> &args);
 void Accept(const FunctionCallbackInfo<Value> &args);
+void Accept4(const FunctionCallbackInfo<Value> &args);
 void Seek(const FunctionCallbackInfo<Value> &args);
 void Read(const FunctionCallbackInfo<Value> &args);
 void Dup2(const FunctionCallbackInfo<Value> &args);
 void Recv(const FunctionCallbackInfo<Value> &args);
 void Write(const FunctionCallbackInfo<Value> &args);
+void Splice(const FunctionCallbackInfo<Value> &args);
+void SendFile(const FunctionCallbackInfo<Value> &args);
 void WriteString(const FunctionCallbackInfo<Value> &args);
 void Writev(const FunctionCallbackInfo<Value> &args);
 void Send(const FunctionCallbackInfo<Value> &args);

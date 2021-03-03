@@ -69,7 +69,7 @@ void just::net::GetSockName(const FunctionCallbackInfo<Value> &args) {
     socklen_t size = sizeof(address);
     inet_ntop(AF_INET, &address.sin_addr, addr, size);
     answer->Set(context, 0, String::NewFromUtf8(isolate, addr, 
-      v8::NewStringType::kNormal, strlen(addr)).ToLocalChecked()).Check();
+      v8::NewStringType::kNormal, strnlen(addr, 255)).ToLocalChecked()).Check();
     answer->Set(context, 1, Integer::New(isolate, 
       ntohs(address.sin_port))).Check();
     args.GetReturnValue().Set(answer);
@@ -79,7 +79,7 @@ void just::net::GetSockName(const FunctionCallbackInfo<Value> &args) {
     getsockname(fd, (struct sockaddr*)&address, &namelen);
     args.GetReturnValue().Set(String::NewFromUtf8(isolate, 
       address.sun_path, v8::NewStringType::kNormal, 
-      strlen(address.sun_path)).ToLocalChecked());
+      strnlen(address.sun_path, 255)).ToLocalChecked());
   }
 }
 
@@ -98,7 +98,7 @@ void just::net::GetPeerName(const FunctionCallbackInfo<Value> &args) {
     socklen_t size = sizeof(address);
     inet_ntop(AF_INET, &address.sin_addr, addr, size);
     answer->Set(context, 0, String::NewFromUtf8(isolate, addr, 
-      v8::NewStringType::kNormal, strlen(addr)).ToLocalChecked()).Check();
+      v8::NewStringType::kNormal, strnlen(addr, 255)).ToLocalChecked()).Check();
     answer->Set(context, 1, Integer::New(isolate, 
       ntohs(address.sin_port))).Check();
     args.GetReturnValue().Set(answer);
@@ -108,7 +108,7 @@ void just::net::GetPeerName(const FunctionCallbackInfo<Value> &args) {
     getpeername(fd, (struct sockaddr*)&address, &namelen);
     args.GetReturnValue().Set(String::NewFromUtf8(isolate, 
       address.sun_path, v8::NewStringType::kNormal, 
-      strlen(address.sun_path)).ToLocalChecked());
+      strnlen(address.sun_path, 255)).ToLocalChecked());
   }
 }
 
@@ -272,6 +272,15 @@ void just::net::Accept(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, accept(fd, NULL, NULL)));
 }
 
+void just::net::Accept4(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Context> context = isolate->GetCurrentContext();
+  int fd = args[0]->Int32Value(context).ToChecked();
+  int flags = args[1]->Int32Value(context).ToChecked();
+  args.GetReturnValue().Set(Integer::New(isolate, accept4(fd, NULL, NULL, flags)));
+}
+
 void just::net::Seek(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -291,83 +300,95 @@ void just::net::Seek(const FunctionCallbackInfo<Value> &args) {
 }
 
 void just::net::Read(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-  int fd = args[0]->Int32Value(context).ToChecked();
+  int fd = Local<Integer>::Cast(args[0])->Value();
   Local<ArrayBuffer> buf = args[1].As<ArrayBuffer>();
-  int argc = args.Length();
-  std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
-  int off = 0;
-  if (argc > 2) {
-    off = args[2]->Int32Value(context).ToChecked();
+  void* data = buf->GetAlignedPointerFromInternalField(1);
+  if (!data) {
+    std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
+    data = backing->Data();
+    buf->SetAlignedPointerInInternalField(1, data);
   }
-  int len = backing->ByteLength() - off;
-  if (argc > 3) {
-    len = args[3]->Int32Value(context).ToChecked();
-  }
-  const char* data = (const char*)backing->Data() + off;
-  int r = read(fd, (void*)data, len);
-  args.GetReturnValue().Set(Integer::New(isolate, r));
+  int off = Local<Integer>::Cast(args[2])->Value();
+  int len = Local<Integer>::Cast(args[3])->Value();
+  const char* dest = (const char*)data + off;
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), read(fd, (void*)dest, len)));
 }
 
 void just::net::Recv(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-  int fd = args[0]->Int32Value(context).ToChecked();
+  int fd = Local<Integer>::Cast(args[0])->Value();
   Local<ArrayBuffer> buf = args[1].As<ArrayBuffer>();
-  int argc = args.Length();
+  void* data = buf->GetAlignedPointerFromInternalField(1);
+  if (!data) {
+    std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
+    data = backing->Data();
+    buf->SetAlignedPointerInInternalField(1, data);
+  }
   int flags = 0;
-  int off = 0;
-  std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
-  int len = backing->ByteLength() - off;
-  if (argc > 2) {
-    off = args[2]->Int32Value(context).ToChecked();
+  int off = Local<Integer>::Cast(args[2])->Value();
+  int len = Local<Integer>::Cast(args[3])->Value();
+  if (args.Length() > 4) {
+    flags = Local<Integer>::Cast(args[4])->Value();
   }
-  if (argc > 3) {
-    len = args[3]->Int32Value(context).ToChecked();
-  }
-  if (argc > 4) {
-    flags = args[4]->Int32Value(context).ToChecked();
-  }
-  const char* data = (const char*)backing->Data() + off;
-  int r = recv(fd, (void*)data, len, flags);
-  args.GetReturnValue().Set(Integer::New(isolate, r));
+  const char* dest = (const char*)data + off;
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), recv(fd, (void*)dest, len, flags)));
 }
 
 void just::net::Write(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-  int fd = args[0]->Int32Value(context).ToChecked();
+  int fd = Local<Integer>::Cast(args[0])->Value();
   Local<ArrayBuffer> ab = args[1].As<ArrayBuffer>();
-  std::shared_ptr<BackingStore> backing = ab->GetBackingStore();
-  int argc = args.Length();
-  int len = 0;
-  if (argc > 2) {
-    len = args[2]->Int32Value(context).ToChecked();
-  } else {
-    len = backing->ByteLength();
+  void* data = ab->GetAlignedPointerFromInternalField(1);
+  if (!data) {
+    std::shared_ptr<BackingStore> backing = ab->GetBackingStore();
+    data = backing->Data();
+    ab->SetAlignedPointerInInternalField(1, data);
   }
+  int argc = args.Length();
+  int len = Local<Integer>::Cast(args[2])->Value();
   int off = 0;
   if (argc > 3) {
-    off = args[3]->Int32Value(context).ToChecked();
+    off = Local<Integer>::Cast(args[3])->Value();
   }
-  char* buf = (char*)backing->Data() + off;
-  args.GetReturnValue().Set(Integer::New(isolate, write(fd, 
+  char* buf = (char*)data + off;
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), write(fd, 
     buf, len)));
+}
+
+void just::net::Splice(const FunctionCallbackInfo<Value> &args) {
+  int infd = Local<Integer>::Cast(args[0])->Value();
+  Local<Array> offsets = args[3].As<Array>();
+  int outfd = Local<Integer>::Cast(args[2])->Value();
+  size_t len = Local<BigInt>::Cast(args[4])->Uint64Value();
+  unsigned int flags = Local<Integer>::Cast(args[0])->Value();
+  Isolate* isolate = args.GetIsolate();
+  Local<Context> context = isolate->GetCurrentContext();
+  loff_t inoff = offsets->Get(context, 0).ToLocalChecked().As<BigInt>()->Uint64Value();
+  loff_t outoff = offsets->Get(context, 1).ToLocalChecked().As<BigInt>()->Uint64Value();
+  ssize_t bytes = splice(infd, &inoff, outfd, &outoff, len, flags);
+  offsets->Set(context, 0, BigInt::New(isolate, inoff)).Check();
+  offsets->Set(context, 1, BigInt::New(isolate, outoff)).Check();
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), bytes));
+}
+
+void just::net::SendFile(const FunctionCallbackInfo<Value> &args) {
+  int outfd = Local<Integer>::Cast(args[0])->Value();
+  int infd = Local<Integer>::Cast(args[1])->Value();
+  size_t count = Local<BigInt>::Cast(args[3])->Uint64Value();
+  Isolate* isolate = args.GetIsolate();
+  Local<Context> context = isolate->GetCurrentContext();
+  Local<Array> offsets = args[2].As<Array>();
+  off_t offset = offsets->Get(context, 0).ToLocalChecked().As<BigInt>()->Uint64Value();
+  ssize_t bytes = sendfile(outfd, infd, &offset, count);
+  offsets->Set(context, 0, BigInt::New(isolate, offset)).Check();
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), bytes));
 }
 
 void just::net::WriteString(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-  int fd = args[0]->Int32Value(context).ToChecked();
-  String::Utf8Value str(args.GetIsolate(), args[1]);
-  int len = str.length();
+  int fd = Local<Integer>::Cast(args[0])->Value();
+  String::Utf8Value str(isolate, args[1]);
   args.GetReturnValue().Set(Integer::New(isolate, write(fd, 
-    *str, len)));
+    *str, str.length())));
 }
 
 void just::net::Writev(const FunctionCallbackInfo<Value> &args) {
@@ -390,45 +411,30 @@ void just::net::Dup2(const FunctionCallbackInfo<Value> &args) {
 }
 
 void just::net::Send(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-  Local<Object> obj;
-  int fd = args[0]->Int32Value(context).ToChecked();
-  Local<ArrayBuffer> buf = args[1].As<ArrayBuffer>();
+  int fd = Local<Integer>::Cast(args[0])->Value();
+  Local<ArrayBuffer> ab = args[1].As<ArrayBuffer>();
+  void* data = ab->GetAlignedPointerFromInternalField(1);
+  if (!data) {
+    std::shared_ptr<BackingStore> backing = ab->GetBackingStore();
+    data = backing->Data();
+    ab->SetAlignedPointerInInternalField(1, data);
+  }
   int argc = args.Length();
-  std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
-  int len = backing->ByteLength();
-  if (argc > 2) {
-    len = args[2]->Int32Value(context).ToChecked();
-  }
+  int len = Local<Integer>::Cast(args[2])->Value();
   int off = 0;
-  if (argc > 3) {
-    off = args[3]->Int32Value(context).ToChecked();
-  }
+  if (argc > 3) off = Local<Integer>::Cast(args[3])->Value();
   int flags = MSG_NOSIGNAL;
-  if (argc > 4) {
-    flags = args[4]->Int32Value(context).ToChecked();
-  }
-  char* out = (char*)backing->Data() + off;
-  int r = send(fd, out, len, flags);
-  args.GetReturnValue().Set(Integer::New(isolate, r));
+  if (argc > 4) flags = Local<Integer>::Cast(args[4])->Value();
+  char* buf = (char*)data + off;
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), send(fd, buf, len, flags)));
 }
 
 void just::net::SendString(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-  int fd = args[0]->Int32Value(context).ToChecked();
-  String::Utf8Value str(args.GetIsolate(), args[1]);
-  int argc = args.Length();
-  int flags = MSG_NOSIGNAL;
-  if (argc > 2) {
-    flags = args[2]->Int32Value(context).ToChecked();
-  }
-  int len = str.length();
+  int fd = Local<Integer>::Cast(args[0])->Value();
+  String::Utf8Value str(isolate, args[1]);
   args.GetReturnValue().Set(Integer::New(isolate, send(fd, 
-    *str, len, flags)));
+    *str, str.length(), MSG_NOSIGNAL)));
 }
 
 void just::net::Close(const FunctionCallbackInfo<Value> &args) {
@@ -464,11 +470,14 @@ void just::net::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, net, "bindInterface", BindInterface);
   SET_METHOD(isolate, net, "getMacAddress", GetMacAddress);
   SET_METHOD(isolate, net, "accept", Accept);
+  SET_METHOD(isolate, net, "accept4", Accept4);
   SET_METHOD(isolate, net, "read", Read);
   SET_METHOD(isolate, net, "dup", Dup2);
   SET_METHOD(isolate, net, "seek", Seek);
   SET_METHOD(isolate, net, "recv", Recv);
   SET_METHOD(isolate, net, "write", Write);
+  SET_METHOD(isolate, net, "splice", Splice);
+  SET_METHOD(isolate, net, "sendfile", SendFile);
   SET_METHOD(isolate, net, "writeString", WriteString);
   SET_METHOD(isolate, net, "writev", Writev);
   SET_METHOD(isolate, net, "send", Send);
@@ -490,7 +499,8 @@ void just::net::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, net, "AF_BLUETOOTH", Integer::New(isolate, AF_BLUETOOTH));
   SET_VALUE(isolate, net, "AF_ALG", Integer::New(isolate, AF_ALG));
   SET_VALUE(isolate, net, "AF_VSOCK", Integer::New(isolate, AF_VSOCK));
-  SET_VALUE(isolate, net, "AF_KCM", Integer::New(isolate, AF_KCM));
+  // NOT AVAILABLE in kernel 4.4
+  //SET_VALUE(isolate, net, "AF_KCM", Integer::New(isolate, AF_KCM));
   SET_VALUE(isolate, net, "AF_LLC", Integer::New(isolate, AF_LLC));
   SET_VALUE(isolate, net, "AF_IB", Integer::New(isolate, AF_IB));
   SET_VALUE(isolate, net, "AF_MPLS", Integer::New(isolate, AF_MPLS));
