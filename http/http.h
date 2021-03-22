@@ -9,6 +9,7 @@ namespace just {
 namespace http {
 
 typedef struct httpContext httpContext;
+// todo: these should be configurable
 #define MAX_PIPELINE 4096
 #define JUST_MAX_HEADERS 32
 
