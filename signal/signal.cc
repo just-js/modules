@@ -27,6 +27,7 @@ void just::signal::SigEmptySet(const FunctionCallbackInfo<Value> &args) {
 
 void just::signal::SignalHandler(int signal, siginfo_t* info, void* void_context) {
   signalHandler* handler = handlers[signal];
+  // i can't do this can i? it's ok as long as i am on same thread?
   Isolate* isolate = handler->isolate;
   Local<Function> callback = Local<Function>::New(isolate, handler->callback);
   Local<Context> context = isolate->GetCurrentContext();

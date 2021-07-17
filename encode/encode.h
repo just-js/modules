@@ -109,6 +109,8 @@ size_t base64_encode(const char* src,
                             size_t dlen);
 void HexEncode(const FunctionCallbackInfo<Value> &args);
 void Base64Encode(const FunctionCallbackInfo<Value> &args);
+void Base64Decode(const FunctionCallbackInfo<Value> &args);
+void HexDecode(const FunctionCallbackInfo<Value> &args);
 void Init(Isolate* isolate, Local<ObjectTemplate> target);
 
 }

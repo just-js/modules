@@ -35,6 +35,7 @@ void just::rocksdb::Get(const FunctionCallbackInfo<Value> &args) {
     value->SetAlignedPointerInInternalField(1, data);
   }
   memcpy(data, returned_value, len);
+  free(returned_value);
   args.GetReturnValue().Set(Integer::New(isolate, len));
 }
 

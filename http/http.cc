@@ -117,7 +117,7 @@ void just::http::ParseRequests(const FunctionCallbackInfo<Value> &args) {
   void* data = buf->GetAlignedPointerFromInternalField(1);
   if (!data) {
     std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
-    data = backing->Data();
+    void* data = backing->Data();
     buf->SetAlignedPointerInInternalField(1, data);
   }
   char* next = (char*)data + off;
@@ -153,7 +153,7 @@ void just::http::ParseResponses(const FunctionCallbackInfo<Value> &args) {
   void* data = buf->GetAlignedPointerFromInternalField(1);
   if (!data) {
     std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
-    data = backing->Data();
+    void* data = backing->Data();
     buf->SetAlignedPointerInInternalField(1, data);
   }
   char* next = (char*)data + off;
@@ -167,6 +167,7 @@ void just::http::ParseResponses(const FunctionCallbackInfo<Value> &args) {
     count++;
     next += nread;
     bytes -= nread;
+    if (bytes <= 0) break;
     state[count].num_headers = JUST_MAX_HEADERS;
     nread = phr_parse_response(next, bytes, &state[count].minor_version, 
       &state[count].status, (const char **)&state[count].status_message, 

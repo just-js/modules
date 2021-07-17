@@ -8,6 +8,13 @@
       ]
     },
     {
+      "name": "signing",
+      "obj": [
+        "signing.o",
+        "deps/openssl-OpenSSL_1_1_1d/libcrypto.a"
+      ]
+    },
+    {
       "name": "tls",
       "obj": [
         "tls.o",

@@ -178,6 +178,27 @@ void just::encode::HexEncode(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, bytes));
 }
 
+void just::encode::HexDecode(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Context> context = isolate->GetCurrentContext();
+  Local<ArrayBuffer> absource = args[0].As<ArrayBuffer>();
+  std::shared_ptr<BackingStore> source = absource->GetBackingStore();
+  Local<ArrayBuffer> abdest = args[1].As<ArrayBuffer>();
+  std::shared_ptr<BackingStore> dest = abdest->GetBackingStore();
+  int len = source->ByteLength();
+  if (args.Length() > 2) {
+    len = args[2]->Uint32Value(context).ToChecked();
+  }
+  int off = 0;
+  if (args.Length() > 3) {
+    off = args[3]->Uint32Value(context).ToChecked();
+  }
+  char* dst = (char*)dest->Data() + off;
+  size_t bytes = hex_decode(dst, dest->ByteLength() - off, (const char*)source->Data(), len);
+  args.GetReturnValue().Set(Integer::New(isolate, bytes));
+}
+
 void just::encode::Base64Encode(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -196,9 +217,28 @@ void just::encode::Base64Encode(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, bytes));
 }
 
+void just::encode::Base64Decode(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Context> context = isolate->GetCurrentContext();
+  Local<ArrayBuffer> absource = args[0].As<ArrayBuffer>();
+  std::shared_ptr<BackingStore> source = absource->GetBackingStore();
+  Local<ArrayBuffer> abdest = args[1].As<ArrayBuffer>();
+  std::shared_ptr<BackingStore> dest = abdest->GetBackingStore();
+  int len = source->ByteLength();
+  if (args.Length() > 2) {
+    len = args[2]->Uint32Value(context).ToChecked();
+  }
+  int dlen = dest->ByteLength();
+  size_t bytes = base64_decode((char*)dest->Data(), dlen, (const char*)source->Data(), len);
+  args.GetReturnValue().Set(Integer::New(isolate, bytes));
+}
+
 void just::encode::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> module = ObjectTemplate::New(isolate);
   SET_METHOD(isolate, module, "hexEncode", HexEncode);
+  SET_METHOD(isolate, module, "hexDecode", HexDecode);
   SET_METHOD(isolate, module, "base64Encode", Base64Encode);
+  SET_METHOD(isolate, module, "base64Decode", Base64Decode);
   SET_MODULE(isolate, target, "encode", module);
 }
