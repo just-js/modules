@@ -16,7 +16,10 @@ void just::memory::ReadMemory(const FunctionCallbackInfo<Value> &args) {
   Local<BigInt> end64 = Local<BigInt>::Cast(args[1]);
   const uint64_t size = end64->Uint64Value() - start64->Uint64Value();
   void* start = reinterpret_cast<void*>(start64->Uint64Value());
-  Local<ArrayBuffer> ab = ArrayBuffer::New(isolate, start, size, v8::ArrayBufferCreationMode::kExternalized);
+  std::unique_ptr<BackingStore> backing = ArrayBuffer::NewBackingStore(
+      start, size, [](void*, size_t, void*){}, nullptr);
+  Local<SharedArrayBuffer> ab = SharedArrayBuffer::New(isolate, std::move(backing));
+  //Local<ArrayBuffer> ab = ArrayBuffer::New(isolate, start, size, v8::ArrayBufferCreationMode::kExternalized);
   args.GetReturnValue().Set(ab);
 }
 

@@ -60,6 +60,7 @@ void just::sys::Getenv(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   String::Utf8Value name(isolate, args[0]);
   char* value = getenv(*name);
+  if (value == NULL) return;
   args.GetReturnValue().Set(String::NewFromUtf8(isolate, 
     value, v8::NewStringType::kNormal, 
     strnlen(value, 1024)).ToLocalChecked());
@@ -659,7 +660,10 @@ void just::sys::ReadMemory(const FunctionCallbackInfo<Value> &args) {
   Local<BigInt> end64 = Local<BigInt>::Cast(args[1]);
   const uint64_t size = end64->Uint64Value() - start64->Uint64Value();
   void* start = reinterpret_cast<void*>(start64->Uint64Value());
-  Local<ArrayBuffer> ab = ArrayBuffer::New(isolate, start, size, v8::ArrayBufferCreationMode::kExternalized);
+  std::unique_ptr<BackingStore> backing = ArrayBuffer::NewBackingStore(
+      start, size, [](void*, size_t, void*){}, nullptr);
+  Local<ArrayBuffer> ab = ArrayBuffer::New(isolate, std::move(backing));
+  //Local<ArrayBuffer> ab = ArrayBuffer::New(isolate, start, size, v8::ArrayBufferCreationMode::kExternalized);
   args.GetReturnValue().Set(ab);
 }
 
@@ -710,8 +714,11 @@ void just::sys::MMap(const FunctionCallbackInfo<Value> &args) {
   if (data == MAP_FAILED) {
     return;
   }
-  Local<SharedArrayBuffer> ab =
-      SharedArrayBuffer::New(isolate, data, len, v8::ArrayBufferCreationMode::kInternalized);
+  std::unique_ptr<BackingStore> backing = ArrayBuffer::NewBackingStore(
+      data, len, [](void*, size_t, void*){}, nullptr);
+  Local<SharedArrayBuffer> ab = SharedArrayBuffer::New(isolate, std::move(backing));
+  //Local<SharedArrayBuffer> ab =
+  //    SharedArrayBuffer::New(isolate, data, len, v8::ArrayBufferCreationMode::kInternalized);
   args.GetReturnValue().Set(ab);
 }
 

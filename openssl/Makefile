@@ -26,9 +26,9 @@ library: deps/openssl-OpenSSL_1_1_1d/libcrypto.a deps/openssl-OpenSSL_1_1_1d/lib
 	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group signing.o crypto.o tls.o deps/openssl-OpenSSL_1_1_1d/libcrypto.a deps/openssl-OpenSSL_1_1_1d/libssl.a -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
 
 library-debug: deps/openssl-OpenSSL_1_1_1d/libcrypto.a deps/openssl-OpenSSL_1_1_1d/libssl.a ## build shared library
-	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/openssl-OpenSSL_1_1_1d/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter crypto.cc
-	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/openssl-OpenSSL_1_1_1d/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter signing.cc
-	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/openssl-OpenSSL_1_1_1d/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter tls.cc
+	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/openssl-OpenSSL_1_1_1d/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -g -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter crypto.cc
+	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/openssl-OpenSSL_1_1_1d/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -g -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter signing.cc
+	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/openssl-OpenSSL_1_1_1d/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -g -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter tls.cc
 	$(CC) -g -shared -flto -pthread -m64 -Wl,--start-group signing.o crypto.o tls.o deps/openssl-OpenSSL_1_1_1d/libcrypto.a deps/openssl-OpenSSL_1_1_1d/libssl.a -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
 
 clean: ## tidy up

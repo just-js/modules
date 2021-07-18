@@ -25,9 +25,9 @@ void just::signing::ExtractRSAPublicKey(const FunctionCallbackInfo<Value> &args)
   Isolate *isolate = args.GetIsolate();
   Local<ArrayBuffer> cb = args[0].As<ArrayBuffer>();
   Local<ArrayBuffer> kb = args[1].As<ArrayBuffer>();
-  std::shared_ptr<BackingStore> cbb = cb->GetBackingStore();
+  //std::shared_ptr<BackingStore> cbb = cb->GetBackingStore();
   X509 *cert = (X509*)cb->GetAlignedPointerFromInternalField(0);
-  const void* data = cbb->Data();
+  //const void* data = cbb->Data();
   EVP_PKEY* key = X509_get_pubkey(cert);
   if (key == NULL) {
     args.GetReturnValue().Set(Integer::New(isolate, -1));
@@ -137,7 +137,7 @@ void just::signing::Sign(const FunctionCallbackInfo<Value> &args) {
   Local<ArrayBuffer> sig = args[2].As<ArrayBuffer>();
   std::shared_ptr<BackingStore> backing2 = sig->GetBackingStore();
   unsigned char* signature = (unsigned char*)backing2->Data();
-  size_t sig_len = backing2->ByteLength();
+  //size_t sig_len = backing2->ByteLength();
   EVP_PKEY* privKey  = EVP_PKEY_new();
   EVP_PKEY_assign_RSA(privKey, rsa);
   EVP_MD_CTX* m_RSASignCtx = EVP_MD_CTX_create();
