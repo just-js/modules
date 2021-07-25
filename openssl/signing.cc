@@ -17,7 +17,7 @@ void just::signing::LoadPublicKey(const FunctionCallbackInfo<Value> &args) {
     args.GetReturnValue().Set(Integer::New(isolate, -2));
     return;
   }
-  pk->SetAlignedPointerInInternalField(0, rsa);
+  pk->SetAlignedPointerInInternalField(1, rsa);
   args.GetReturnValue().Set(Integer::New(isolate, 0));
 }
 
@@ -26,7 +26,7 @@ void just::signing::ExtractRSAPublicKey(const FunctionCallbackInfo<Value> &args)
   Local<ArrayBuffer> cb = args[0].As<ArrayBuffer>();
   Local<ArrayBuffer> kb = args[1].As<ArrayBuffer>();
   //std::shared_ptr<BackingStore> cbb = cb->GetBackingStore();
-  X509 *cert = (X509*)cb->GetAlignedPointerFromInternalField(0);
+  X509 *cert = (X509*)cb->GetAlignedPointerFromInternalField(1);
   //const void* data = cbb->Data();
   EVP_PKEY* key = X509_get_pubkey(cert);
   if (key == NULL) {
@@ -44,7 +44,7 @@ void just::signing::ExtractRSAPublicKey(const FunctionCallbackInfo<Value> &args)
     args.GetReturnValue().Set(Integer::New(isolate, -3));
     return;
   }
-  kb->SetAlignedPointerInInternalField(0, rsa);
+  kb->SetAlignedPointerInInternalField(1, rsa);
   args.GetReturnValue().Set(Integer::New(isolate, 0));
 }
 
@@ -64,14 +64,14 @@ void just::signing::LoadCertificate(const FunctionCallbackInfo<Value> &args) {
     args.GetReturnValue().Set(Integer::New(isolate, -2));
     return;
   }
-  pk->SetAlignedPointerInInternalField(0, cert);
+  pk->SetAlignedPointerInInternalField(1, cert);
   args.GetReturnValue().Set(Integer::New(isolate, 0));
 }
 
 void just::signing::Verify(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   Local<ArrayBuffer> pk = args[0].As<ArrayBuffer>();
-  RSA *rsa = (RSA*)pk->GetAlignedPointerFromInternalField(0);
+  RSA *rsa = (RSA*)pk->GetAlignedPointerFromInternalField(1);
   Local<ArrayBuffer> pt = args[1].As<ArrayBuffer>();
   std::shared_ptr<BackingStore> backing = pt->GetBackingStore();
   const void* plaintext = backing->Data();
@@ -122,14 +122,14 @@ void just::signing::LoadPrivateKey(const FunctionCallbackInfo<Value> &args) {
     args.GetReturnValue().Set(Integer::New(isolate, -1));
     return;
   }
-  pk->SetAlignedPointerInInternalField(0, rsa);
+  pk->SetAlignedPointerInInternalField(1, rsa);
   args.GetReturnValue().Set(Integer::New(isolate, 0));
 }
 
 void just::signing::Sign(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   Local<ArrayBuffer> pk = args[0].As<ArrayBuffer>();
-  RSA *rsa = (RSA*)pk->GetAlignedPointerFromInternalField(0);
+  RSA *rsa = (RSA*)pk->GetAlignedPointerFromInternalField(1);
   Local<ArrayBuffer> pt = args[1].As<ArrayBuffer>();
   std::shared_ptr<BackingStore> backing = pt->GetBackingStore();
   const void* plaintext = backing->Data();
@@ -176,11 +176,11 @@ void just::signing::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, module, "version", String::NewFromUtf8Literal(isolate, 
     OPENSSL_VERSION_TEXT));
   SET_METHOD(isolate, module, "loadPublicKey", LoadPublicKey);
-  SET_METHOD(isolate, module, "extractRSAPublicKey", ExtractRSAPublicKey);
-  SET_METHOD(isolate, module, "loadCertificate", LoadCertificate);
   SET_METHOD(isolate, module, "loadPrivateKey", LoadPrivateKey);
-  SET_METHOD(isolate, module, "verify", Verify);
+  SET_METHOD(isolate, module, "loadCertificate", LoadCertificate);
+  SET_METHOD(isolate, module, "extractRSAPublicKey", ExtractRSAPublicKey);
   SET_METHOD(isolate, module, "sign", Sign);
+  SET_METHOD(isolate, module, "verify", Verify);
 
   SET_MODULE(isolate, target, "signing", module);
 }

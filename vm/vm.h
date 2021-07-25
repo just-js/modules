@@ -13,7 +13,7 @@ struct v8_context {
 };
 
 void CompileScript(const FunctionCallbackInfo<Value> &args);
-void RunModule(const FunctionCallbackInfo<Value> &args);
+//void RunModule(const FunctionCallbackInfo<Value> &args);
 void RunScript(const FunctionCallbackInfo<Value> &args);
 void CreateContext(const FunctionCallbackInfo<Value> &args);
 void RunInContext(const FunctionCallbackInfo<Value> &args);

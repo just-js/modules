@@ -22,6 +22,15 @@ void ReadTwo(const FunctionCallbackInfo<Value> &args);
 
 void* getBufferData (Local<Value> arg);
 
+void ReadArrayBuffer(const FunctionCallbackInfo<Value> &args);
+void ReadBufferObject(const FunctionCallbackInfo<Value> &args);
+void ReadArrayBufferFast(const FunctionCallbackInfo<Value> &args);
+void CreateBufferObject(const FunctionCallbackInfo<Value> &args);
+void CreateArrayBuffer(const FunctionCallbackInfo<Value> &args);
+void CreateArrayBufferInternal(const FunctionCallbackInfo<Value> &args);
+void CreateExternalBuffer(const FunctionCallbackInfo<Value> &args);
+void CreateExternalStaticBuffer(const FunctionCallbackInfo<Value> &args);
+
 void Init(Isolate* isolate, Local<ObjectTemplate> target);
 }
 

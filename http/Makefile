@@ -1,7 +1,9 @@
-C = gcc
-CC = g++
-LIBS=/usr/local/lib/just
+C=gcc
+CC=g++
 MODULE=http
+LIBS=/usr/local/lib/just
+FLAGS=${CFLAGS}
+LFLAG=${LFLAGS}
 
 .PHONY: help clean
 
@@ -14,20 +16,14 @@ deps: ## dependencies
 	curl -L -o deps/picohttpparser/picohttpparser.c https://raw.githubusercontent.com/h2o/picohttpparser/master/picohttpparser.c
 
 picohttpparser.o: deps ## compile picohttpparser lib
-	$(C) -fPIC -c -DV8_COMPRESS_POINTERS -Ideps/picohttpparser -O3 -Wall -Wextra -march=native -mtune=native -msse4 deps/picohttpparser/picohttpparser.c
-
-picohttpparser.debug: deps ## compile picohttpparser lib
 	$(C) -fPIC -c -DV8_COMPRESS_POINTERS -Ideps/picohttpparser -g -O3 -Wall -Wextra -march=native -mtune=native -msse4 deps/picohttpparser/picohttpparser.c
 
 library: ## build shared library
 	make picohttpparser.o
-	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/picohttpparser -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
-	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group ${MODULE}.o picohttpparser.o -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
-
-library-debug: ## build shared library
-	make picohttpparser.o
-	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/picohttpparser -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
+	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/picohttpparser -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -g -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
 	$(CC) -g -shared -flto -pthread -m64 -Wl,--start-group ${MODULE}.o picohttpparser.o -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
+	objcopy --only-keep-debug ${MODULE}.so ${MODULE}.so.debug
+	strip --strip-debug --strip-unneeded ${MODULE}.so
 
 clean: ## tidy up
 	rm -f *.o
@@ -39,7 +35,13 @@ all: ## make all
 	make library
 
 install: ## copy shared library to $INSTALL
-	mkdir -p ${LIBS} && cp -f ${MODULE}.so ${LIBS}
+	mkdir -p ${LIBS}
+	cp -f ${MODULE}.so ${LIBS}/${MODULE}.so
+
+install-debug: ## copy debug symbols to $INSTALL
+	mkdir -p ${LIBS}/.debug
+	cp -f ${MODULE}.so.debug ${LIBS}/.debug/${MODULE}.so.debug
+	objcopy --add-gnu-debuglink=${LIBS}/${MODULE}.so ${LIBS}/.debug/${MODULE}.so.debug
 
 cleanall: ## tidy up dependencies
 	make clean

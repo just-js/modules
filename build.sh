@@ -4,4 +4,5 @@ for m in $MODULES
 do
   make -C $m/ clean library
   sudo make -C $m/ install
+  sudo make -C $m/ install-debug
 done

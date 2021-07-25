@@ -24,7 +24,10 @@ struct signalHandler {
   int signum;
 	Isolate* isolate;
 };
-
+// todo - need to look at how to handle this across threads
+// currently it is not thread safe and will only allow one signal handler across
+// the process?
+// https://stackoverflow.com/questions/15235526/the-static-keyword-and-its-various-uses-in-c
 std::map<int, signalHandler*> handlers;
 
 void SignalHandler(int signal, siginfo_t* info, void* void_context);

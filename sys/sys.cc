@@ -489,13 +489,14 @@ void just::sys::Calloc(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();
-  uint32_t count = args[0]->Uint32Value(context).ToChecked();
-  uint32_t size = 0;
+  size_t count = args[0]->Uint32Value(context).ToChecked();
+  size_t size = 0;
   void* chunk;
   if (args[1]->IsString()) {
     Local<String> str = args[1].As<String>();
     size = str->Utf8Length(isolate);
     chunk = calloc(count, size);
+    if (chunk == NULL) return;
     int written;
     char* next = (char*)chunk;
     for (uint32_t i = 0; i < count; i++) {
@@ -504,8 +505,13 @@ void just::sys::Calloc(const FunctionCallbackInfo<Value> &args) {
       next += written;
     }
   } else {
-    size = args[1]->Uint32Value(context).ToChecked();
+    if (args[1]->IsBigInt()) {
+      size = reinterpret_cast<unsigned long>(Local<BigInt>::Cast(args[1])->Uint64Value());
+    } else {
+      size = args[1]->Uint32Value(context).ToChecked();
+    }
     chunk = calloc(count, size);
+    if (chunk == NULL) return;
   }
   bool shared = false;
   if (args.Length() > 2) {
@@ -550,7 +556,6 @@ void just::sys::ReadString(const FunctionCallbackInfo<Value> &args) {
 
 void just::sys::GetAddress(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
   std::shared_ptr<BackingStore> backing = ab->GetBackingStore();
   char *data = static_cast<char *>(backing->Data());
@@ -714,7 +719,8 @@ void just::sys::MMap(const FunctionCallbackInfo<Value> &args) {
   if (data == MAP_FAILED) {
     return;
   }
-  std::unique_ptr<BackingStore> backing = ArrayBuffer::NewBackingStore(
+  // TODO: optionally create ArrayBuffer or SharedArrayBuffer
+  std::unique_ptr<BackingStore> backing = SharedArrayBuffer::NewBackingStore(
       data, len, [](void*, size_t, void*){}, nullptr);
   Local<SharedArrayBuffer> ab = SharedArrayBuffer::New(isolate, std::move(backing));
   //Local<SharedArrayBuffer> ab =
@@ -879,6 +885,60 @@ void just::sys::GetTerminalFlags(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(args.GetIsolate(), orig.c_lflag));
 }
 
+void just::sys::MemFdCreate(const FunctionCallbackInfo<Value> &args) {
+  Isolate* isolate = args.GetIsolate();
+  v8::String::Utf8Value fname(isolate, args[0]);
+  int flags = Local<Integer>::Cast(args[1])->Value();
+  args.GetReturnValue().Set(Integer::New(isolate, memfd_create(*fname, flags)));
+}
+
+/*
+void just::memory::GetMeta(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  Local<Context> context = isolate->GetCurrentContext();
+  Local<Object> meta = args[1].As<Object>();
+  bool isExternal = false;
+  bool isDetachable = false;
+  bool isShared = false;
+  if (args[0]->IsArrayBuffer()) {
+    Local<ArrayBuffer> buf = args[0].As<ArrayBuffer>();
+    isExternal = buf->IsExternal();
+    isDetachable = buf->IsDetachable();
+  } else if (args[0]->IsSharedArrayBuffer()) {
+    Local<SharedArrayBuffer> buf = args[0].As<SharedArrayBuffer>();
+    isExternal = buf->IsExternal();
+    isShared = true;
+  }
+  meta->Set(context, String::NewFromUtf8Literal(isolate, "isExternal", NewStringType::kInternalized), v8::Boolean::New(isolate, isExternal)).Check();
+  meta->Set(context, String::NewFromUtf8Literal(isolate, "isDetachable", NewStringType::kInternalized), v8::Boolean::New(isolate, isDetachable)).Check();
+  meta->Set(context, String::NewFromUtf8Literal(isolate, "isShared", NewStringType::kInternalized), v8::Boolean::New(isolate, isShared)).Check();
+  args.GetReturnValue().Set(meta);
+}
+
+void just::memory::WritePointer(const FunctionCallbackInfo<Value> &args) {
+  just::memory::rawBuffer* dest = just::memory::buffers[Local<Integer>::Cast(args[0])->Value()];
+  int off = Local<Integer>::Cast(args[1])->Value();
+  just::memory::rawBuffer* src = just::memory::buffers[Local<Integer>::Cast(args[2])->Value()];
+  char* ptr = (char*)dest->data + off;
+  *reinterpret_cast<void **>(ptr) = src->data;
+}
+
+void just::memory::ReadMemory(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  Local<BigInt> start64 = Local<BigInt>::Cast(args[0]);
+  Local<BigInt> end64 = Local<BigInt>::Cast(args[1]);
+  const uint64_t size = end64->Uint64Value() - start64->Uint64Value();
+  void* start = reinterpret_cast<void*>(start64->Uint64Value());
+  // this memory is just wrapped by an arraybuffer and will not be freed by v8
+  // we also don't give it a callback to just::FreeMemory so it will never be freed
+  std::unique_ptr<BackingStore> backing = ArrayBuffer::NewBackingStore(
+      start, size, [](void*, size_t, void*){}, nullptr);
+  Local<ArrayBuffer> ab = ArrayBuffer::New(isolate, std::move(backing));
+  args.GetReturnValue().Set(ab);
+}
+
+*/
+
 void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> sys = ObjectTemplate::New(isolate);
   SET_METHOD(isolate, sys, "getuid", GetUid);
@@ -904,6 +964,7 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, sys, "sharedMemoryUsage", SharedMemoryUsage);
   SET_METHOD(isolate, sys, "heapObjectStatistics", HeapObjectStatistics);
   SET_METHOD(isolate, sys, "heapCodeStatistics", HeapCodeStatistics);
+  SET_METHOD(isolate, sys, "memfdCreate", MemFdCreate);
   SET_METHOD(isolate, sys, "pid", PID);
   SET_METHOD(isolate, sys, "ppid", PPID);
   SET_METHOD(isolate, sys, "setpgid", SetPgid);

@@ -1,5 +1,7 @@
 #include "vm.h"
 
+// https://stackoverflow.com/questions/19383724/what-exactly-is-the-difference-between-v8isolate-and-v8context
+
 void just::vm::CreateContext(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -7,19 +9,21 @@ void just::vm::CreateContext(const FunctionCallbackInfo<Value> &args) {
   Local<ObjectTemplate> global = ObjectTemplate::New(isolate);
   Local<ObjectTemplate> just = ObjectTemplate::New(isolate);
   just::Init(isolate, just);
-  global->Set(String::NewFromUtf8Literal(isolate, "just", 
-    NewStringType::kNormal), just);
+  Local<String> name;
+  if (args.Length() > 1) {
+    name = args[1].As<String>();
+  } else {
+    name = String::NewFromUtf8Literal(isolate, "just", NewStringType::kInternalized);
+  }
+  global->Set(name, just);
   Local<Context> context = Context::New(isolate, NULL, global);
   context->AllowCodeGenerationFromStrings(false);
   isolate->SetPromiseRejectCallback(PromiseRejectCallback);
   Local<Object> globalInstance = context->Global();
   globalInstance->Set(context, String::NewFromUtf8Literal(isolate, 
     "global", 
-    NewStringType::kNormal), globalInstance).Check();
-  Local<Value> obj = globalInstance->Get(context, 
-    String::NewFromUtf8Literal(
-      isolate, "just", 
-      NewStringType::kNormal)).ToLocalChecked();
+    NewStringType::kInternalized), globalInstance).Check();
+  Local<Value> obj = globalInstance->Get(context, name).ToLocalChecked();
   Local<Object> justInstance = Local<Object>::Cast(obj);
   v8::Persistent<Context, v8::CopyablePersistentTraits<Context>> pContext(isolate, context);
   v8_context* handle = (v8_context*)calloc(1, sizeof(v8_context));
@@ -172,7 +176,7 @@ void just::vm::CompileScript(const FunctionCallbackInfo<Value> &args) {
   Local<Function> fn = maybe_fn.ToLocalChecked();
   args.GetReturnValue().Set(fn);
 }
-
+/*
 void just::vm::RunModule(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -213,6 +217,7 @@ void just::vm::RunModule(const FunctionCallbackInfo<Value> &args) {
   }
   args.GetReturnValue().Set(result.ToLocalChecked());
 }
+*/
 
 void just::vm::RunScript(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
@@ -251,7 +256,7 @@ void just::vm::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> vm = ObjectTemplate::New(isolate);
   // TODO: compile and compileInContext should switch names
   SET_METHOD(isolate, vm, "compile", just::vm::CompileScript);
-  SET_METHOD(isolate, vm, "runModule", just::vm::RunModule);
+  //SET_METHOD(isolate, vm, "runModule", just::vm::RunModule);
   SET_METHOD(isolate, vm, "runScript", just::vm::RunScript);
   SET_METHOD(isolate, vm, "runInContext", just::vm::RunInContext);
   SET_METHOD(isolate, vm, "compileInContext", just::vm::CompileInContext);
