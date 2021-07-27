@@ -109,17 +109,39 @@ void just::http::GetResponses(const FunctionCallbackInfo<Value> &args) {
   }
 }
 
+void just::http::CreateHandle(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  Local<Context> context = isolate->GetCurrentContext();
+  Local<ArrayBuffer> buf = args[0].As<ArrayBuffer>();
+  std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
+  void* data = backing->Data();
+  void* info;
+  std::shared_ptr<BackingStore> backing2;
+  Local<ArrayBuffer> buf2;
+  if (args.Length() > 1) {
+    buf2 = args[1].As<ArrayBuffer>();
+    backing2 = buf2->GetBackingStore();
+    info = backing2->Data();
+  }
+  Local<ObjectTemplate> ht = ObjectTemplate::New(isolate);
+  ht->SetInternalFieldCount(2);
+  Local<Object> handle = ht->NewInstance(context).ToLocalChecked();
+  handle->Set(context, String::NewFromUtf8Literal(isolate, "size", NewStringType::kInternalized), Integer::New(isolate, backing->ByteLength())).Check();
+  handle->Set(context, String::NewFromUtf8Literal(isolate, "count", NewStringType::kInternalized), Integer::New(isolate, 0)).Check();
+  handle->Set(context, String::NewFromUtf8Literal(isolate, "remaining", NewStringType::kInternalized), Integer::New(isolate, 0)).Check();
+  handle->Set(context, String::NewFromUtf8Literal(isolate, "buffer", NewStringType::kInternalized), buf).Check();
+  handle->SetAlignedPointerInInternalField(0, data);
+  if (args.Length() > 1) handle->SetAlignedPointerInInternalField(1, info);
+  args.GetReturnValue().Set(handle);
+}
+
 void just::http::ParseRequests(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   Local<ArrayBuffer> buf = args[0].As<ArrayBuffer>();
   size_t bytes = Local<Integer>::Cast(args[1])->Value();
   size_t off = Local<Integer>::Cast(args[2])->Value();
-  void* data = buf->GetAlignedPointerFromInternalField(1);
-  if (!data) {
-    std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
-    void* data = backing->Data();
-    buf->SetAlignedPointerInInternalField(1, data);
-  }
+  std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
+  void* data = backing->Data();
   char* next = (char*)data + off;
   int count = 0;
   state[count].num_headers = JUST_MAX_HEADERS;
@@ -140,9 +162,122 @@ void just::http::ParseRequests(const FunctionCallbackInfo<Value> &args) {
   }
   Local<Context> context = isolate->GetCurrentContext();
   Local<Array> answer = args[3].As<Array>();
-  answer->Set(context, 0, Integer::New(isolate, bytes)).Check();
-  answer->Set(context, 1, Integer::New(isolate, count)).Check();
+  answer->Set(context, 0, Integer::New(isolate, count)).Check();
+  answer->Set(context, 1, Integer::New(isolate, bytes)).Check();
   args.GetReturnValue().Set(answer);
+}
+
+void just::http::ParseRequestsHandle(const FunctionCallbackInfo<Value> &args) {
+  Local<Object> handle = args[0].As<Object>();
+  char* data = static_cast<char *>(handle->GetAlignedPointerFromInternalField(0));
+  size_t bytes = Local<Integer>::Cast(args[1])->Value();
+  size_t off = 0;
+  if (args.Length() > 2) {
+    off = Local<Integer>::Cast(args[2])->Value();
+  }
+  int count = 0;
+  char* next = data + off;
+  state[count].num_headers = JUST_MAX_HEADERS;
+  ssize_t nread = phr_parse_request(next, bytes, (const char **)&state[count].method, 
+    &state[count].method_len, (const char **)&state[count].path, &state[count].path_len, 
+    &state[count].minor_version, state[count].headers, &state[count].num_headers, 0);
+  while (nread > -1) {
+    count++;
+    next += nread;
+    bytes -= nread;
+    if (bytes <= 0) break;
+    state[count].num_headers = JUST_MAX_HEADERS;
+    nread = phr_parse_request(next, bytes, (const char **)&state[count].method, 
+      &state[count].method_len, (const char **)&state[count].path, &state[count].path_len, 
+      &state[count].minor_version, state[count].headers, &state[count].num_headers, 0);
+  }
+  Isolate *isolate = args.GetIsolate();
+  Local<Context> context = isolate->GetCurrentContext();
+  handle->Set(context, 0, Integer::New(isolate, count)).Check();
+  handle->Set(context, 1, Integer::New(isolate, bytes)).Check();
+}
+
+void just::http::ParseRequestsHandle3(const FunctionCallbackInfo<Value> &args) {
+  Local<Object> handle = args[0].As<Object>();
+  char* data = static_cast<char *>(handle->GetAlignedPointerFromInternalField(0));
+  size_t bytes = Local<Integer>::Cast(args[1])->Value();
+  size_t off = 0;
+  if (args.Length() > 2) {
+    off = Local<Integer>::Cast(args[2])->Value();
+  }
+  int count = 0;
+  char* next = data + off;
+  state[count].num_headers = JUST_MAX_HEADERS;
+  ssize_t nread = phr_parse_request(next, bytes, (const char **)&state[count].method, 
+    &state[count].method_len, (const char **)&state[count].path, &state[count].path_len, 
+    &state[count].minor_version, state[count].headers, &state[count].num_headers, 0);
+  while (nread > -1) {
+    count++;
+    next += nread;
+    bytes -= nread;
+    if (bytes <= 0) break;
+    state[count].num_headers = JUST_MAX_HEADERS;
+    nread = phr_parse_request(next, bytes, (const char **)&state[count].method, 
+      &state[count].method_len, (const char **)&state[count].path, &state[count].path_len, 
+      &state[count].minor_version, state[count].headers, &state[count].num_headers, 0);
+  }
+}
+
+void just::http::ParseRequestsHandle4(const FunctionCallbackInfo<Value> &args) {
+  Local<Object> handle = args[0].As<Object>();
+  char* data = static_cast<char *>(handle->GetAlignedPointerFromInternalField(0));
+  size_t bytes = Local<Integer>::Cast(args[1])->Value();
+  size_t off = 0;
+  if (args.Length() > 2) {
+    off = Local<Integer>::Cast(args[2])->Value();
+  }
+  int count = 0;
+  char* next = data + off;
+  state[count].num_headers = JUST_MAX_HEADERS;
+  ssize_t nread = phr_parse_request(next, bytes, (const char **)&state[count].method, 
+    &state[count].method_len, (const char **)&state[count].path, &state[count].path_len, 
+    &state[count].minor_version, state[count].headers, &state[count].num_headers, 0);
+  while (nread > -1) {
+    count++;
+    next += nread;
+    bytes -= nread;
+    if (bytes <= 0) break;
+    state[count].num_headers = JUST_MAX_HEADERS;
+    nread = phr_parse_request(next, bytes, (const char **)&state[count].method, 
+      &state[count].method_len, (const char **)&state[count].path, &state[count].path_len, 
+      &state[count].minor_version, state[count].headers, &state[count].num_headers, 0);
+  }
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), (count & 0xff) + (bytes << 16)));
+}
+
+void just::http::ParseRequestsHandle2(const FunctionCallbackInfo<Value> &args) {
+  Local<Object> handle = args[0].As<Object>();
+  char* data = static_cast<char *>(handle->GetAlignedPointerFromInternalField(0));
+  size_t bytes = Local<Integer>::Cast(args[1])->Value();
+  size_t off = 0;
+  if (args.Length() > 2) {
+    off = Local<Integer>::Cast(args[2])->Value();
+  }
+  int count = 0;
+  char* next = data + off;
+  state[count].num_headers = JUST_MAX_HEADERS;
+  ssize_t nread = phr_parse_request(next, bytes, (const char **)&state[count].method, 
+    &state[count].method_len, (const char **)&state[count].path, &state[count].path_len, 
+    &state[count].minor_version, state[count].headers, &state[count].num_headers, 0);
+  while (nread > -1) {
+    count++;
+    next += nread;
+    bytes -= nread;
+    if (bytes <= 0) break;
+    state[count].num_headers = JUST_MAX_HEADERS;
+    nread = phr_parse_request(next, bytes, (const char **)&state[count].method, 
+      &state[count].method_len, (const char **)&state[count].path, &state[count].path_len, 
+      &state[count].minor_version, state[count].headers, &state[count].num_headers, 0);
+  }
+  Isolate *isolate = args.GetIsolate();
+  Local<Context> context = isolate->GetCurrentContext();
+  handle->Set(context, String::NewFromUtf8Literal(isolate, "count", NewStringType::kInternalized), Integer::New(isolate, count)).Check();
+  handle->Set(context, String::NewFromUtf8Literal(isolate, "remaining", NewStringType::kInternalized), Integer::New(isolate, bytes)).Check();
 }
 
 void just::http::ParseResponses(const FunctionCallbackInfo<Value> &args) {
@@ -150,16 +285,11 @@ void just::http::ParseResponses(const FunctionCallbackInfo<Value> &args) {
   Local<ArrayBuffer> buf = args[0].As<ArrayBuffer>();
   size_t bytes = Local<Integer>::Cast(args[1])->Value();
   size_t off = Local<Integer>::Cast(args[2])->Value();
-  void* data = buf->GetAlignedPointerFromInternalField(1);
-  if (!data) {
-    std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
-    void* data = backing->Data();
-    buf->SetAlignedPointerInInternalField(1, data);
-  }
+  std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
+  void* data = backing->Data();
   char* next = (char*)data + off;
   int count = 0;
   state[count].num_headers = JUST_MAX_HEADERS;
-  //TODO: buffer overrun
   ssize_t nread = phr_parse_response(next, bytes, &state[count].minor_version, 
     &state[count].status, (const char **)&state[count].status_message, 
     &state[count].status_message_len, state[count].headers, &state[count].num_headers, 0);
@@ -175,15 +305,195 @@ void just::http::ParseResponses(const FunctionCallbackInfo<Value> &args) {
   }
   Local<Context> context = isolate->GetCurrentContext();
   Local<Array> answer = args[3].As<Array>();
-  answer->Set(context, 0, Integer::New(isolate, bytes)).Check();
-  answer->Set(context, 1, Integer::New(isolate, count)).Check();
+  answer->Set(context, 0, Integer::New(isolate, count)).Check();
+  answer->Set(context, 1, Integer::New(isolate, bytes)).Check();
   args.GetReturnValue().Set(answer);
+}
+
+void just::http::ParseResponsesHandle(const FunctionCallbackInfo<Value> &args) {
+  Local<Object> handle = args[0].As<Object>();
+  char* data = static_cast<char *>(handle->GetAlignedPointerFromInternalField(0));
+  size_t bytes = Local<Integer>::Cast(args[1])->Value();
+  size_t off = 0;
+  if (args.Length() > 2) {
+    off = Local<Integer>::Cast(args[2])->Value();
+  }
+  int count = 0;
+  char* next = data + off;
+  state[count].num_headers = JUST_MAX_HEADERS;
+  ssize_t nread = phr_parse_response(next, bytes, &state[count].minor_version, 
+    &state[count].status, (const char **)&state[count].status_message, 
+    &state[count].status_message_len, state[count].headers, &state[count].num_headers, 0);
+  while (nread > -1) {
+    count++;
+    next += nread;
+    bytes -= nread;
+    if (bytes <= 0) break;
+    state[count].num_headers = JUST_MAX_HEADERS;
+    nread = phr_parse_response(next, bytes, &state[count].minor_version, 
+      &state[count].status, (const char **)&state[count].status_message, 
+      &state[count].status_message_len, state[count].headers, &state[count].num_headers, 0);
+  }
+  Isolate *isolate = args.GetIsolate();
+  Local<Context> context = isolate->GetCurrentContext();
+  handle->Set(context, 0, Integer::New(isolate, count)).Check();
+  handle->Set(context, 1, Integer::New(isolate, bytes)).Check();
+}
+
+void just::http::ParseResponsesHandle3(const FunctionCallbackInfo<Value> &args) {
+  Local<Object> handle = args[0].As<Object>();
+  char* data = static_cast<char *>(handle->GetAlignedPointerFromInternalField(0));
+  size_t bytes = Local<Integer>::Cast(args[1])->Value();
+  size_t off = 0;
+  if (args.Length() > 2) {
+    off = Local<Integer>::Cast(args[2])->Value();
+  }
+  int count = 0;
+  char* next = data + off;
+  state[count].num_headers = JUST_MAX_HEADERS;
+  ssize_t nread = phr_parse_response(next, bytes, &state[count].minor_version, 
+    &state[count].status, (const char **)&state[count].status_message, 
+    &state[count].status_message_len, state[count].headers, &state[count].num_headers, 0);
+  while (nread > -1) {
+    count++;
+    next += nread;
+    bytes -= nread;
+    if (bytes <= 0) break;
+    state[count].num_headers = JUST_MAX_HEADERS;
+    nread = phr_parse_response(next, bytes, &state[count].minor_version, 
+      &state[count].status, (const char **)&state[count].status_message, 
+      &state[count].status_message_len, state[count].headers, &state[count].num_headers, 0);
+  }
+}
+
+void just::http::ParseResponsesHandle4(const FunctionCallbackInfo<Value> &args) {
+  Local<Object> handle = args[0].As<Object>();
+  char* data = static_cast<char *>(handle->GetAlignedPointerFromInternalField(0));
+  size_t bytes = Local<Integer>::Cast(args[1])->Value();
+  size_t off = 0;
+  if (args.Length() > 2) {
+    off = Local<Integer>::Cast(args[2])->Value();
+  }
+  int count = 0;
+  char* next = data + off;
+  state[count].num_headers = JUST_MAX_HEADERS;
+  ssize_t nread = phr_parse_response(next, bytes, &state[count].minor_version, 
+    &state[count].status, (const char **)&state[count].status_message, 
+    &state[count].status_message_len, state[count].headers, &state[count].num_headers, 0);
+  while (nread > -1) {
+    count++;
+    next += nread;
+    bytes -= nread;
+    if (bytes <= 0) break;
+    state[count].num_headers = JUST_MAX_HEADERS;
+    nread = phr_parse_response(next, bytes, &state[count].minor_version, 
+      &state[count].status, (const char **)&state[count].status_message, 
+      &state[count].status_message_len, state[count].headers, &state[count].num_headers, 0);
+  }
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), (count & 0xff) + (bytes << 16)));
+}
+
+void just::http::ParseResponsesHandle2(const FunctionCallbackInfo<Value> &args) {
+  Local<Object> handle = args[0].As<Object>();
+  char* data = static_cast<char *>(handle->GetAlignedPointerFromInternalField(0));
+  size_t bytes = Local<Integer>::Cast(args[1])->Value();
+  size_t off = 0;
+  if (args.Length() > 2) {
+    off = Local<Integer>::Cast(args[2])->Value();
+  }
+  int count = 0;
+  char* next = data + off;
+  state[count].num_headers = JUST_MAX_HEADERS;
+  ssize_t nread = phr_parse_response(next, bytes, &state[count].minor_version, 
+    &state[count].status, (const char **)&state[count].status_message, 
+    &state[count].status_message_len, state[count].headers, &state[count].num_headers, 0);
+  while (nread > -1) {
+    count++;
+    next += nread;
+    bytes -= nread;
+    if (bytes <= 0) break;
+    state[count].num_headers = JUST_MAX_HEADERS;
+    nread = phr_parse_response(next, bytes, &state[count].minor_version, 
+      &state[count].status, (const char **)&state[count].status_message, 
+      &state[count].status_message_len, state[count].headers, &state[count].num_headers, 0);
+  }
+  Isolate *isolate = args.GetIsolate();
+  Local<Context> context = isolate->GetCurrentContext();
+  handle->Set(context, String::NewFromUtf8Literal(isolate, "count", NewStringType::kInternalized), Integer::New(isolate, count)).Check();
+  handle->Set(context, String::NewFromUtf8Literal(isolate, "remaining", NewStringType::kInternalized), Integer::New(isolate, bytes)).Check();
+}
+
+void just::http::ParseRequestsHandle5(const FunctionCallbackInfo<Value> &args) {
+  Local<Object> handle = args[0].As<Object>();
+  char* data = static_cast<char *>(handle->GetAlignedPointerFromInternalField(0));
+  size_t bytes = Local<Integer>::Cast(args[1])->Value();
+  size_t off = 0;
+  if (args.Length() > 2) {
+    off = Local<Integer>::Cast(args[2])->Value();
+  }
+  int count = 0;
+  char* next = data + off;
+  state[count].num_headers = JUST_MAX_HEADERS;
+  ssize_t nread = phr_parse_request(next, bytes, (const char **)&state[count].method, 
+    &state[count].method_len, (const char **)&state[count].path, &state[count].path_len, 
+    &state[count].minor_version, state[count].headers, &state[count].num_headers, 0);
+  while (nread > -1) {
+    count++;
+    next += nread;
+    bytes -= nread;
+    if (bytes <= 0) break;
+    state[count].num_headers = JUST_MAX_HEADERS;
+    nread = phr_parse_request(next, bytes, (const char **)&state[count].method, 
+      &state[count].method_len, (const char **)&state[count].path, &state[count].path_len, 
+      &state[count].minor_version, state[count].headers, &state[count].num_headers, 0);
+  }
+  uint32_t* info = static_cast<uint32_t*>(handle->GetAlignedPointerFromInternalField(1));
+  *info = (count & 0xff) + (bytes << 16);
+}
+
+void just::http::ParseResponsesHandle5(const FunctionCallbackInfo<Value> &args) {
+  Local<Object> handle = args[0].As<Object>();
+  char* data = static_cast<char *>(handle->GetAlignedPointerFromInternalField(0));
+  size_t bytes = Local<Integer>::Cast(args[1])->Value();
+  size_t off = 0;
+  if (args.Length() > 2) {
+    off = Local<Integer>::Cast(args[2])->Value();
+  }
+  int count = 0;
+  char* next = data + off;
+  state[count].num_headers = JUST_MAX_HEADERS;
+  ssize_t nread = phr_parse_response(next, bytes, &state[count].minor_version, 
+    &state[count].status, (const char **)&state[count].status_message, 
+    &state[count].status_message_len, state[count].headers, &state[count].num_headers, 0);
+  while (nread > -1) {
+    count++;
+    next += nread;
+    bytes -= nread;
+    if (bytes <= 0) break;
+    state[count].num_headers = JUST_MAX_HEADERS;
+    nread = phr_parse_response(next, bytes, &state[count].minor_version, 
+      &state[count].status, (const char **)&state[count].status_message, 
+      &state[count].status_message_len, state[count].headers, &state[count].num_headers, 0);
+  }
+  uint32_t* info = static_cast<uint32_t*>(handle->GetAlignedPointerFromInternalField(1));
+  *info = (count & 0xff) + (bytes << 16);
 }
 
 void just::http::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> http = ObjectTemplate::New(isolate);
+  SET_METHOD(isolate, http, "createHandle", CreateHandle);
   SET_METHOD(isolate, http, "parseRequests", ParseRequests);
   SET_METHOD(isolate, http, "parseResponses", ParseResponses);
+  SET_METHOD(isolate, http, "parseRequestsHandle", ParseRequestsHandle);
+  SET_METHOD(isolate, http, "parseResponsesHandle", ParseResponsesHandle);
+  SET_METHOD(isolate, http, "parseRequestsHandle2", ParseRequestsHandle2);
+  SET_METHOD(isolate, http, "parseResponsesHandle2", ParseResponsesHandle2);
+  SET_METHOD(isolate, http, "parseRequestsHandle3", ParseRequestsHandle3);
+  SET_METHOD(isolate, http, "parseResponsesHandle3", ParseResponsesHandle3);
+  SET_METHOD(isolate, http, "parseRequestsHandle4", ParseRequestsHandle4);
+  SET_METHOD(isolate, http, "parseResponsesHandle4", ParseResponsesHandle4);
+  SET_METHOD(isolate, http, "parseRequestsHandle5", ParseRequestsHandle5);
+  SET_METHOD(isolate, http, "parseResponsesHandle5", ParseResponsesHandle5);
   SET_METHOD(isolate, http, "getUrl", GetUrl);
   SET_METHOD(isolate, http, "getVersion", GetVersion);
   SET_METHOD(isolate, http, "getStatusCode", GetStatusCode);
