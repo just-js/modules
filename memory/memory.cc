@@ -1,25 +1,16 @@
 #include "memory.h"
 
-static void ResetHandleAndSetFlag(const v8::WeakCallbackInfo<just::memory::rawBuffer>& data) {
-  data.GetParameter()->buffer.Reset();
-  just::memory::buffers.erase(data.GetParameter()->handle);
-  fprintf(stderr, "free %i\n", data.GetParameter()->handle);
-  for ( const auto &p : just::memory::buffers ) {
-    fprintf(stderr, "%i\n", p.first);
-  } 
-  delete data.GetParameter();
-}
-
 void just::memory::ReadMemory(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   Local<BigInt> start64 = Local<BigInt>::Cast(args[0]);
   Local<BigInt> end64 = Local<BigInt>::Cast(args[1]);
   const uint64_t size = end64->Uint64Value() - start64->Uint64Value();
   void* start = reinterpret_cast<void*>(start64->Uint64Value());
+  // this memory is just wrapped by an arraybuffer and will not be freed by v8
+  // we also don't give it a callback to just::FreeMemory so it will never be freed
   std::unique_ptr<BackingStore> backing = ArrayBuffer::NewBackingStore(
       start, size, [](void*, size_t, void*){}, nullptr);
-  Local<SharedArrayBuffer> ab = SharedArrayBuffer::New(isolate, std::move(backing));
-  //Local<ArrayBuffer> ab = ArrayBuffer::New(isolate, start, size, v8::ArrayBufferCreationMode::kExternalized);
+  Local<ArrayBuffer> ab = ArrayBuffer::New(isolate, std::move(backing));
   args.GetReturnValue().Set(ab);
 }
 
@@ -27,19 +18,21 @@ void just::memory::GetMeta(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   Local<Context> context = isolate->GetCurrentContext();
   Local<Object> meta = args[1].As<Object>();
-  bool isExternal;
-  bool isDetachable;
+  bool isExternal = false;
+  bool isDetachable = false;
+  bool isShared = false;
   if (args[0]->IsArrayBuffer()) {
     Local<ArrayBuffer> buf = args[0].As<ArrayBuffer>();
     isExternal = buf->IsExternal();
-    isDetachable = buf->IsExternal();
+    isDetachable = buf->IsDetachable();
   } else if (args[0]->IsSharedArrayBuffer()) {
     Local<SharedArrayBuffer> buf = args[0].As<SharedArrayBuffer>();
     isExternal = buf->IsExternal();
-    isDetachable = buf->IsExternal();
+    isShared = true;
   }
-  meta->Set(context, String::NewFromUtf8Literal(isolate, "isExternal", NewStringType::kNormal), v8::Boolean::New(isolate, isExternal)).Check();
-  meta->Set(context, String::NewFromUtf8Literal(isolate, "isDetachable", NewStringType::kNormal), v8::Boolean::New(isolate, isDetachable)).Check();
+  meta->Set(context, String::NewFromUtf8Literal(isolate, "isExternal", NewStringType::kInternalized), v8::Boolean::New(isolate, isExternal)).Check();
+  meta->Set(context, String::NewFromUtf8Literal(isolate, "isDetachable", NewStringType::kInternalized), v8::Boolean::New(isolate, isDetachable)).Check();
+  meta->Set(context, String::NewFromUtf8Literal(isolate, "isShared", NewStringType::kInternalized), v8::Boolean::New(isolate, isShared)).Check();
   args.GetReturnValue().Set(meta);
 }
 
@@ -50,9 +43,6 @@ void just::memory::RawBuffer(const FunctionCallbackInfo<Value> &args) {
   just::memory::rawBuffer* buf = new just::memory::rawBuffer();
   buf->data = backing->Data();
   buf->len = backing->ByteLength();
-  buf->buffer.Reset(isolate, ab);
-  buf->handle = just::memory::bcount;
-  buf->buffer.SetWeak(buf, &ResetHandleAndSetFlag, v8::WeakCallbackType::kFinalizer);
   just::memory::buffers[just::memory::bcount] = buf;
   args.GetReturnValue().Set(Integer::New(isolate, just::memory::bcount++));
 }
@@ -65,11 +55,8 @@ void just::memory::Alloc(const FunctionCallbackInfo<Value> &args) {
   just::memory::rawBuffer* buf = new just::memory::rawBuffer();
   buf->data = ab->GetBackingStore()->Data();
   buf->len = size;
-  buf->buffer.Reset(isolate, ab);
-  buf->handle = just::memory::bcount;
-  buf->buffer.SetWeak(buf, &ResetHandleAndSetFlag, v8::WeakCallbackType::kFinalizer);
   just::memory::buffers[just::memory::bcount] = buf;
-  ab->Set(context, String::NewFromUtf8Literal(isolate, "raw", NewStringType::kNormal), Integer::New(isolate, just::memory::bcount++)).Check();
+  ab->Set(context, String::NewFromUtf8Literal(isolate, "raw", NewStringType::kInternalized), Integer::New(isolate, just::memory::bcount++)).Check();
   args.GetReturnValue().Set(ab);
 }
 
@@ -157,17 +144,22 @@ void just::memory::MemFdCreate(const FunctionCallbackInfo<Value> &args) {
 
 void just::memory::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> module = ObjectTemplate::New(isolate);
+
+  SET_METHOD(isolate, module, "rawBuffer", RawBuffer);
+
   SET_METHOD(isolate, module, "readString", ReadString);
-  SET_METHOD(isolate, module, "writePointer", WritePointer);
   SET_METHOD(isolate, module, "writeString", WriteString);
   SET_METHOD(isolate, module, "writeCString", WriteCString);
+
   SET_METHOD(isolate, module, "getAddress", GetAddress);
-  SET_METHOD(isolate, module, "rawBuffer", RawBuffer);
+  SET_METHOD(isolate, module, "writePointer", WritePointer);
   SET_METHOD(isolate, module, "readMemory", ReadMemory);
   SET_METHOD(isolate, module, "getMeta", GetMeta);
   SET_METHOD(isolate, module, "memfdCreate", MemFdCreate);
   SET_METHOD(isolate, module, "copy", Copy);
   SET_METHOD(isolate, module, "alloc", Alloc);
+
   SET_VALUE(isolate, module, "MFD_CLOEXEC", Integer::New(isolate, MFD_CLOEXEC));
+
   SET_MODULE(isolate, target, "memory", module);
 }

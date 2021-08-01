@@ -18,10 +18,8 @@ namespace just {
 namespace memory {
 
 struct rawBuffer {
-	v8::Persistent<ArrayBuffer, v8::NonCopyablePersistentTraits<ArrayBuffer>> buffer;
   void* data;
   size_t len;
-  int handle;
 };
 
 std::map<int, rawBuffer*> buffers;

@@ -20,16 +20,12 @@ deps/openssl-OpenSSL_1_1_1d/libcrypto.a: deps
 	make -C deps/openssl-OpenSSL_1_1_1d/ libcrypto.a libssl.a
 
 library: deps/openssl-OpenSSL_1_1_1d/libcrypto.a deps/openssl-OpenSSL_1_1_1d/libssl.a ## build shared library
-	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/openssl-OpenSSL_1_1_1d/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter crypto.cc
-	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/openssl-OpenSSL_1_1_1d/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter signing.cc
-	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/openssl-OpenSSL_1_1_1d/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter tls.cc
-	$(CC) -s -shared -flto -pthread -m64 -Wl,--start-group signing.o crypto.o tls.o deps/openssl-OpenSSL_1_1_1d/libcrypto.a deps/openssl-OpenSSL_1_1_1d/libssl.a -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
-
-library-debug: deps/openssl-OpenSSL_1_1_1d/libcrypto.a deps/openssl-OpenSSL_1_1_1d/libssl.a ## build shared library
-	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/openssl-OpenSSL_1_1_1d/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -g -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter crypto.cc
-	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/openssl-OpenSSL_1_1_1d/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -g -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter signing.cc
-	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/openssl-OpenSSL_1_1_1d/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -g -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter tls.cc
-	$(CC) -g -shared -flto -pthread -m64 -Wl,--start-group signing.o crypto.o tls.o deps/openssl-OpenSSL_1_1_1d/libcrypto.a deps/openssl-OpenSSL_1_1_1d/libssl.a -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
+	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/openssl-OpenSSL_1_1_1d/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -g -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter crypto.cc
+	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/openssl-OpenSSL_1_1_1d/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -g -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter signing.cc
+	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/openssl-OpenSSL_1_1_1d/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -g -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter tls.cc
+	$(CC) -g -s -shared -flto -pthread -m64 -Wl,--start-group signing.o crypto.o tls.o deps/openssl-OpenSSL_1_1_1d/libcrypto.a deps/openssl-OpenSSL_1_1_1d/libssl.a -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
+	objcopy --only-keep-debug ${MODULE}.so ${MODULE}.so.debug
+	strip --strip-debug --strip-unneeded ${MODULE}.so
 
 clean: ## tidy up
 	rm -f *.o
@@ -41,7 +37,13 @@ all: ## make all
 	make library
 
 install: ## copy shared library to $INSTALL
-	mkdir -p ${LIBS} && cp -f ${MODULE}.so ${LIBS}
+	mkdir -p ${LIBS}
+	cp -f ${MODULE}.so ${LIBS}/${MODULE}.so
+
+install-debug: ## copy debug symbols to $INSTALL
+	mkdir -p ${LIBS}/.debug
+	cp -f ${MODULE}.so.debug ${LIBS}/.debug/${MODULE}.so.debug
+	objcopy --add-gnu-debuglink=${LIBS}/${MODULE}.so ${LIBS}/.debug/${MODULE}.so.debug
 
 cleanall: ## tidy up dependencies
 	make clean

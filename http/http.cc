@@ -167,6 +167,38 @@ void just::http::ParseRequests(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(answer);
 }
 
+void just::http::ParseResponses(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  Local<ArrayBuffer> buf = args[0].As<ArrayBuffer>();
+  size_t bytes = Local<Integer>::Cast(args[1])->Value();
+  size_t off = Local<Integer>::Cast(args[2])->Value();
+  std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
+  void* data = backing->Data();
+  char* next = (char*)data + off;
+  int count = 0;
+  state[count].num_headers = JUST_MAX_HEADERS;
+  ssize_t nread = phr_parse_response(next, bytes, &state[count].minor_version, 
+    &state[count].status, (const char **)&state[count].status_message, 
+    &state[count].status_message_len, state[count].headers, &state[count].num_headers, 0);
+  while (nread > -1) {
+    count++;
+    next += nread;
+    bytes -= nread;
+    if (bytes <= 0) break;
+    state[count].num_headers = JUST_MAX_HEADERS;
+    nread = phr_parse_response(next, bytes, &state[count].minor_version, 
+      &state[count].status, (const char **)&state[count].status_message, 
+      &state[count].status_message_len, state[count].headers, &state[count].num_headers, 0);
+  }
+  Local<Context> context = isolate->GetCurrentContext();
+  Local<Array> answer = args[3].As<Array>();
+  answer->Set(context, 0, Integer::New(isolate, count)).Check();
+  answer->Set(context, 1, Integer::New(isolate, bytes)).Check();
+  args.GetReturnValue().Set(answer);
+}
+
+/*
+
 void just::http::ParseRequestsHandle(const FunctionCallbackInfo<Value> &args) {
   Local<Object> handle = args[0].As<Object>();
   char* data = static_cast<char *>(handle->GetAlignedPointerFromInternalField(0));
@@ -278,36 +310,6 @@ void just::http::ParseRequestsHandle2(const FunctionCallbackInfo<Value> &args) {
   Local<Context> context = isolate->GetCurrentContext();
   handle->Set(context, String::NewFromUtf8Literal(isolate, "count", NewStringType::kInternalized), Integer::New(isolate, count)).Check();
   handle->Set(context, String::NewFromUtf8Literal(isolate, "remaining", NewStringType::kInternalized), Integer::New(isolate, bytes)).Check();
-}
-
-void just::http::ParseResponses(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  Local<ArrayBuffer> buf = args[0].As<ArrayBuffer>();
-  size_t bytes = Local<Integer>::Cast(args[1])->Value();
-  size_t off = Local<Integer>::Cast(args[2])->Value();
-  std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
-  void* data = backing->Data();
-  char* next = (char*)data + off;
-  int count = 0;
-  state[count].num_headers = JUST_MAX_HEADERS;
-  ssize_t nread = phr_parse_response(next, bytes, &state[count].minor_version, 
-    &state[count].status, (const char **)&state[count].status_message, 
-    &state[count].status_message_len, state[count].headers, &state[count].num_headers, 0);
-  while (nread > -1) {
-    count++;
-    next += nread;
-    bytes -= nread;
-    if (bytes <= 0) break;
-    state[count].num_headers = JUST_MAX_HEADERS;
-    nread = phr_parse_response(next, bytes, &state[count].minor_version, 
-      &state[count].status, (const char **)&state[count].status_message, 
-      &state[count].status_message_len, state[count].headers, &state[count].num_headers, 0);
-  }
-  Local<Context> context = isolate->GetCurrentContext();
-  Local<Array> answer = args[3].As<Array>();
-  answer->Set(context, 0, Integer::New(isolate, count)).Check();
-  answer->Set(context, 1, Integer::New(isolate, bytes)).Check();
-  args.GetReturnValue().Set(answer);
 }
 
 void just::http::ParseResponsesHandle(const FunctionCallbackInfo<Value> &args) {
@@ -422,8 +424,9 @@ void just::http::ParseResponsesHandle2(const FunctionCallbackInfo<Value> &args) 
   handle->Set(context, String::NewFromUtf8Literal(isolate, "count", NewStringType::kInternalized), Integer::New(isolate, count)).Check();
   handle->Set(context, String::NewFromUtf8Literal(isolate, "remaining", NewStringType::kInternalized), Integer::New(isolate, bytes)).Check();
 }
+*/
 
-void just::http::ParseRequestsHandle5(const FunctionCallbackInfo<Value> &args) {
+void just::http::ParseRequestsHandle(const FunctionCallbackInfo<Value> &args) {
   Local<Object> handle = args[0].As<Object>();
   char* data = static_cast<char *>(handle->GetAlignedPointerFromInternalField(0));
   size_t bytes = Local<Integer>::Cast(args[1])->Value();
@@ -451,7 +454,7 @@ void just::http::ParseRequestsHandle5(const FunctionCallbackInfo<Value> &args) {
   *info = (count & 0xff) + (bytes << 16);
 }
 
-void just::http::ParseResponsesHandle5(const FunctionCallbackInfo<Value> &args) {
+void just::http::ParseResponsesHandle(const FunctionCallbackInfo<Value> &args) {
   Local<Object> handle = args[0].As<Object>();
   char* data = static_cast<char *>(handle->GetAlignedPointerFromInternalField(0));
   size_t bytes = Local<Integer>::Cast(args[1])->Value();
@@ -486,14 +489,14 @@ void just::http::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, http, "parseResponses", ParseResponses);
   SET_METHOD(isolate, http, "parseRequestsHandle", ParseRequestsHandle);
   SET_METHOD(isolate, http, "parseResponsesHandle", ParseResponsesHandle);
-  SET_METHOD(isolate, http, "parseRequestsHandle2", ParseRequestsHandle2);
-  SET_METHOD(isolate, http, "parseResponsesHandle2", ParseResponsesHandle2);
-  SET_METHOD(isolate, http, "parseRequestsHandle3", ParseRequestsHandle3);
-  SET_METHOD(isolate, http, "parseResponsesHandle3", ParseResponsesHandle3);
-  SET_METHOD(isolate, http, "parseRequestsHandle4", ParseRequestsHandle4);
-  SET_METHOD(isolate, http, "parseResponsesHandle4", ParseResponsesHandle4);
-  SET_METHOD(isolate, http, "parseRequestsHandle5", ParseRequestsHandle5);
-  SET_METHOD(isolate, http, "parseResponsesHandle5", ParseResponsesHandle5);
+  //SET_METHOD(isolate, http, "parseRequestsHandle2", ParseRequestsHandle2);
+  //SET_METHOD(isolate, http, "parseResponsesHandle2", ParseResponsesHandle2);
+  //SET_METHOD(isolate, http, "parseRequestsHandle3", ParseRequestsHandle3);
+  //SET_METHOD(isolate, http, "parseResponsesHandle3", ParseResponsesHandle3);
+  //SET_METHOD(isolate, http, "parseRequestsHandle4", ParseRequestsHandle4);
+  //SET_METHOD(isolate, http, "parseResponsesHandle4", ParseResponsesHandle4);
+  //SET_METHOD(isolate, http, "parseRequestsHandle5", ParseRequestsHandle5);
+  //SET_METHOD(isolate, http, "parseResponsesHandle5", ParseResponsesHandle5);
   SET_METHOD(isolate, http, "getUrl", GetUrl);
   SET_METHOD(isolate, http, "getVersion", GetVersion);
   SET_METHOD(isolate, http, "getStatusCode", GetStatusCode);
