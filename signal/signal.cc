@@ -31,7 +31,7 @@ void just::signal::SignalHandler(int signal, siginfo_t* info, void* void_context
   Isolate* isolate = handler->isolate;
   Local<Function> callback = Local<Function>::New(isolate, handler->callback);
   Local<Context> context = isolate->GetCurrentContext();
-  std::unique_ptr<BackingStore> backing = ArrayBuffer::NewBackingStore(
+  std::unique_ptr<BackingStore> backing = SharedArrayBuffer::NewBackingStore(
       info, sizeof(siginfo_t), [](void*, size_t, void*){}, nullptr);
   Local<SharedArrayBuffer> ab = SharedArrayBuffer::New(isolate, std::move(backing));
   //Local<ArrayBuffer> ab = ArrayBuffer::New(isolate, info, sizeof(siginfo_t), v8::ArrayBufferCreationMode::kExternalized);

@@ -158,7 +158,6 @@ size_t just::encode::base64_encode(const char* src,
 
 void just::encode::HexEncode(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();
   Local<ArrayBuffer> absource = args[0].As<ArrayBuffer>();
   std::shared_ptr<BackingStore> source = absource->GetBackingStore();
@@ -180,7 +179,6 @@ void just::encode::HexEncode(const FunctionCallbackInfo<Value> &args) {
 
 void just::encode::HexDecode(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();
   Local<ArrayBuffer> absource = args[0].As<ArrayBuffer>();
   std::shared_ptr<BackingStore> source = absource->GetBackingStore();
@@ -201,7 +199,6 @@ void just::encode::HexDecode(const FunctionCallbackInfo<Value> &args) {
 
 void just::encode::Base64Encode(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();
   Local<ArrayBuffer> absource = args[0].As<ArrayBuffer>();
   std::shared_ptr<BackingStore> source = absource->GetBackingStore();
@@ -219,7 +216,6 @@ void just::encode::Base64Encode(const FunctionCallbackInfo<Value> &args) {
 
 void just::encode::Base64Decode(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();
   Local<ArrayBuffer> absource = args[0].As<ArrayBuffer>();
   std::shared_ptr<BackingStore> source = absource->GetBackingStore();
