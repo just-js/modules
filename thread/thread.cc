@@ -12,10 +12,8 @@ void* just::thread::startThread(void *data) {
 void just::thread::Spawn(const FunctionCallbackInfo<Value> &args) {
   // TODO: we have to free all the allocated memory when the thread finishes
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();
   int argc = args.Length();
-  // get source code to execute in thread
   String::Utf8Value source(isolate, args[0]);
   threadContext* ctx = (threadContext*)calloc(1, sizeof(threadContext));
 	ctx->source = (char*)calloc(1, source.length());
@@ -80,65 +78,53 @@ void just::thread::Spawn(const FunctionCallbackInfo<Value> &args) {
 }
 
 void just::thread::Cancel(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-  Local<BigInt> bi = args[0]->ToBigInt(context).ToLocalChecked();
   bool lossless = true;
-  pthread_t tid = (pthread_t)bi->Uint64Value(&lossless);
-  args.GetReturnValue().Set(Integer::New(isolate, pthread_cancel(tid)));
+  pthread_t tid = (pthread_t)Local<BigInt>::Cast(args[0])->Uint64Value(&lossless);
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), pthread_cancel(tid)));
+}
+
+void just::thread::Exit(const FunctionCallbackInfo<Value> &args) {
+  int rc = Local<Integer>::Cast(args[0])->Value();
+  pthread_exit(&rc);
 }
 
 void just::thread::Join(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-  Local<BigInt> bi = args[0]->ToBigInt(context).ToLocalChecked();
   bool lossless = true;
-  pthread_t tid = (pthread_t)bi->Uint64Value(&lossless);
+  pthread_t tid = (pthread_t)Local<BigInt>::Cast(args[0])->Uint64Value(&lossless);
   void* tret;
   int r = pthread_join(tid, &tret);
   if (r != 0) {
-    args.GetReturnValue().Set(BigInt::New(isolate, r));
+    args.GetReturnValue().Set(Integer::New(args.GetIsolate(), r));
     return;
   }
-  args.GetReturnValue().Set(BigInt::New(isolate, (long)tret));
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), *(int*)tret));
 }
 
 void just::thread::TryJoin(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-  Local<BigInt> bi = args[0]->ToBigInt(context).ToLocalChecked();
-  Local<Array> answer = args[1].As<Array>();
   bool lossless = true;
-  pthread_t tid = (pthread_t)bi->Uint64Value(&lossless);
+  pthread_t tid = (pthread_t)Local<BigInt>::Cast(args[0])->Uint64Value(&lossless);
   void* tret;
   int r = pthread_tryjoin_np(tid, &tret);
-  answer->Set(context, 0, Integer::New(isolate, (long)tret)).Check();
-  args.GetReturnValue().Set(Integer::New(isolate, r));
+  if (r != 0) {
+    args.GetReturnValue().Set(Integer::New(args.GetIsolate(), -1));
+    return;
+  }
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), *(int*)tret));
 }
 
 void just::thread::Self(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  pthread_t tid = pthread_self();
-  args.GetReturnValue().Set(BigInt::New(isolate, (long)tid));
+  args.GetReturnValue().Set(BigInt::New(args.GetIsolate(), (long)pthread_self()));
 }
 
 void just::thread::SetAffinity(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-  Local<BigInt> bi = args[0]->ToBigInt(context).ToLocalChecked();
   bool lossless = true;
-  pthread_t tid = (pthread_t)bi->Uint64Value(&lossless);
-  int cpu = args[1]->Int32Value(context).ToChecked();
+  pthread_t tid = (pthread_t)Local<BigInt>::Cast(args[0])->Uint64Value(&lossless);
+  int cpu = Local<Integer>::Cast(args[1])->Value();
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
   CPU_SET(cpu, &cpuset);
-  int r = pthread_setaffinity_np(tid, sizeof(cpu_set_t), &cpuset);
-  args.GetReturnValue().Set(Integer::New(isolate, r));
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), 
+    pthread_setaffinity_np(tid, sizeof(cpu_set_t), &cpuset)));
 }
 
 void just::thread::SetName(const FunctionCallbackInfo<Value> &args) {
@@ -154,26 +140,22 @@ void just::thread::SetName(const FunctionCallbackInfo<Value> &args) {
 }
 
 void just::thread::GetAffinity(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-  Local<BigInt> bi = args[0]->ToBigInt(context).ToLocalChecked();
   bool lossless = true;
-  pthread_t tid = (pthread_t)bi->Uint64Value(&lossless);
+  pthread_t tid = (pthread_t)Local<BigInt>::Cast(args[0])->Uint64Value(&lossless);
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
   int r = pthread_getaffinity_np(tid, sizeof(cpu_set_t), &cpuset);
   if (r != 0) {
-    args.GetReturnValue().Set(Integer::New(isolate, r));
+    args.GetReturnValue().Set(Integer::New(args.GetIsolate(), r));
     return;
   }
   for (int j = 0; j < CPU_SETSIZE; j++) {
-      if (CPU_ISSET(j, &cpuset)) {
-        r = j;
-        break;
-      }
+    if (CPU_ISSET(j, &cpuset)) {
+      r = j;
+      break;
+    }
   }
-  args.GetReturnValue().Set(Integer::New(isolate, r));
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), r));
 }
 
 void just::thread::Init(Isolate* isolate, Local<ObjectTemplate> target) {
@@ -185,6 +167,7 @@ void just::thread::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, module, "self", Self);
   SET_METHOD(isolate, module, "setAffinity", SetAffinity);
   SET_METHOD(isolate, module, "setName", SetName);
+  SET_METHOD(isolate, module, "exit", Exit);
   SET_METHOD(isolate, module, "getAffinity", GetAffinity);
   SET_MODULE(isolate, target, "thread", module);
 }
