@@ -1,23 +1,26 @@
 #include "vm.h"
 
-// https://stackoverflow.com/questions/19383724/what-exactly-is-the-difference-between-v8isolate-and-v8context
-
 void just::vm::CreateContext(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
   Local<ObjectTemplate> global = ObjectTemplate::New(isolate);
   Local<ObjectTemplate> just = ObjectTemplate::New(isolate);
   just::Init(isolate, just);
   Local<String> name;
-  if (args.Length() > 1) {
+  int argc = args.Length();
+  if (argc > 1) {
     name = args[1].As<String>();
   } else {
-    name = String::NewFromUtf8Literal(isolate, "just", NewStringType::kInternalized);
+    name = String::NewFromUtf8Literal(isolate, "just", 
+      NewStringType::kInternalized);
   }
   global->Set(name, just);
+  bool allowCodeGen = false;
+  if (argc > 2) {
+    allowCodeGen = args[2]->BooleanValue(isolate);
+  }
   Local<Context> context = Context::New(isolate, NULL, global);
-  context->AllowCodeGenerationFromStrings(false);
+  context->AllowCodeGenerationFromStrings(allowCodeGen);
   isolate->SetPromiseRejectCallback(PromiseRejectCallback);
   Local<Object> globalInstance = context->Global();
   globalInstance->Set(context, String::NewFromUtf8Literal(isolate, 
@@ -33,26 +36,19 @@ void just::vm::CreateContext(const FunctionCallbackInfo<Value> &args) {
 }
 
 void just::vm::EnterContext(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
   v8_context* handle = (v8_context*)ab->GetAlignedPointerFromInternalField(1);
-  Local<Context> context = handle->context.Get(isolate);
-  context->Enter();
+  handle->context.Get(args.GetIsolate())->Enter();
 }
 
 void just::vm::ExitContext(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
   v8_context* handle = (v8_context*)ab->GetAlignedPointerFromInternalField(1);
-  Local<Context> context = handle->context.Get(isolate);
-  context->Exit();
+  handle->context.Get(args.GetIsolate())->Exit();
 }
 
 void just::vm::CompileInContext(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
   v8_context* handle = (v8_context*)ab->GetAlignedPointerFromInternalField(1);
   Local<Context> context = handle->context.Get(isolate);
@@ -77,13 +73,13 @@ void just::vm::CompileInContext(const FunctionCallbackInfo<Value> &args) {
     }
     return;
   }
-  v8::Persistent<Script, v8::CopyablePersistentTraits<Script>> pScript(isolate, script);
+  v8::Persistent<Script, v8::CopyablePersistentTraits<Script>> 
+    pScript(isolate, script);
   handle->script = pScript;
 }
 
 void just::vm::CompileAndRunInContext(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
   v8_context* handle = (v8_context*)ab->GetAlignedPointerFromInternalField(1);
   Local<Context> context = handle->context.Get(isolate);
@@ -118,7 +114,6 @@ void just::vm::CompileAndRunInContext(const FunctionCallbackInfo<Value> &args) {
 
 void just::vm::RunInContext(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
   v8_context* handle = (v8_context*)ab->GetAlignedPointerFromInternalField(1);
   Local<Context> context = handle->context.Get(isolate);
@@ -134,7 +129,6 @@ void just::vm::RunInContext(const FunctionCallbackInfo<Value> &args) {
 
 void just::vm::CompileScript(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();
   TryCatch try_catch(isolate);
   Local<String> source = args[0].As<String>();
@@ -176,52 +170,9 @@ void just::vm::CompileScript(const FunctionCallbackInfo<Value> &args) {
   Local<Function> fn = maybe_fn.ToLocalChecked();
   args.GetReturnValue().Set(fn);
 }
-/*
-void just::vm::RunModule(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-  TryCatch try_catch(isolate);
-  Local<String> source = args[0].As<String>();
-  Local<String> path = args[1].As<String>();
-  ScriptOrigin baseorigin(path, // resource name
-    Integer::New(isolate, 0), // line offset
-    Integer::New(isolate, 0),  // column offset
-    False(isolate), // is shared cross-origin
-    Local<Integer>(),  // script id
-    Local<Value>(), // source map url
-    False(isolate), // is opaque
-    False(isolate), // is wasm
-    True(isolate)); // is module
-  ScriptCompiler::Source basescript(source, baseorigin);
-  Local<Module> module;
-  bool ok = ScriptCompiler::CompileModule(isolate, 
-    &basescript).ToLocal(&module);
-  if (!ok) {
-    if (try_catch.HasCaught() && !try_catch.HasTerminated()) {
-      try_catch.ReThrow();
-    }
-    return;
-  }
-  Maybe<bool> ok2 = module->InstantiateModule(context, OnModuleInstantiate);
-  if (ok2.IsNothing()) {
-    if (try_catch.HasCaught() && !try_catch.HasTerminated()) {
-      try_catch.ReThrow();
-    }
-    return;
-  }
-  MaybeLocal<Value> result = module->Evaluate(context);
-  if (try_catch.HasCaught() && !try_catch.HasTerminated()) {
-    try_catch.ReThrow();
-    return;
-  }
-  args.GetReturnValue().Set(result.ToLocalChecked());
-}
-*/
 
 void just::vm::RunScript(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetEnteredOrMicrotaskContext();
   TryCatch try_catch(isolate);
   Local<String> source = args[0].As<String>();
@@ -254,9 +205,7 @@ void just::vm::RunScript(const FunctionCallbackInfo<Value> &args) {
 
 void just::vm::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> vm = ObjectTemplate::New(isolate);
-  // TODO: compile and compileInContext should switch names
   SET_METHOD(isolate, vm, "compile", just::vm::CompileScript);
-  //SET_METHOD(isolate, vm, "runModule", just::vm::RunModule);
   SET_METHOD(isolate, vm, "runScript", just::vm::RunScript);
   SET_METHOD(isolate, vm, "runInContext", just::vm::RunInContext);
   SET_METHOD(isolate, vm, "compileInContext", just::vm::CompileInContext);
