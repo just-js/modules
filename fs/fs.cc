@@ -2,7 +2,6 @@
 
 void just::fs::Unlink(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   String::Utf8Value fname(isolate, args[0]);
   args.GetReturnValue().Set(Integer::New(isolate, unlink(*fname)));
 }
@@ -12,30 +11,15 @@ void just::fs::Realpath(const FunctionCallbackInfo<Value> &args) {
   String::Utf8Value fname(isolate, args[0]);
   Local<ArrayBuffer> buf = args[1].As<ArrayBuffer>();
   std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
-  char* newpath = (char*)backing->Data();
-  newpath = realpath(*fname, newpath);
-  if (newpath == NULL) {
-    args.GetReturnValue().Set(Integer::New(isolate, -1));
-  }
-  args.GetReturnValue().Set(Integer::New(isolate, 0));
-}
-
-void just::fs::Utime(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  String::Utf8Value fname(isolate, args[0]);
-  // from http://rosettacode.org/wiki/File/Modification_Time#C
-  struct utimbuf new_times;
-  struct stat info;
-  stat(*fname, &info);
-  //time_t mtime = info.st_mtime;
-  new_times.actime = info.st_atime; /* keep atime unchanged */
-  new_times.modtime = time(NULL); /* set mtime to current time */
-  args.GetReturnValue().Set(Integer::New(isolate, utime(*fname, &new_times)));
+  char* newpath = realpath(*fname, (char*)backing->Data());
+  if (newpath == NULL) return;
+  int len = strnlen(newpath, PATH_MAX);
+  args.GetReturnValue().Set(String::NewFromUtf8(isolate, newpath, 
+    NewStringType::kNormal, len).ToLocalChecked());
 }
 
 void just::fs::Symlink(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   String::Utf8Value target(isolate, args[0]);
   String::Utf8Value linkpath(isolate, args[1]);
   args.GetReturnValue().Set(Integer::New(isolate, symlink(*target, *linkpath)));
@@ -43,19 +27,18 @@ void just::fs::Symlink(const FunctionCallbackInfo<Value> &args) {
 
 void just::fs::Mknod(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   String::Utf8Value target(isolate, args[0]);
   unsigned int type = Local<Integer>::Cast(args[1])->Value();
   unsigned int mode = Local<Integer>::Cast(args[2])->Value();
   int major = Local<Integer>::Cast(args[3])->Value();
   int minor = Local<Integer>::Cast(args[4])->Value();
   dev_t dev = makedev(major, minor);
-  args.GetReturnValue().Set(Integer::New(isolate, mknod(*target, type | mode, dev)));
+  args.GetReturnValue().Set(Integer::New(isolate, 
+    mknod(*target, type | mode, dev)));
 }
 
 void just::fs::Mkfifo(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   String::Utf8Value target(isolate, args[0]);
   unsigned int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
   if (args.Length() > 1) {
@@ -66,95 +49,78 @@ void just::fs::Mkfifo(const FunctionCallbackInfo<Value> &args) {
 
 void just::fs::Mount(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   String::Utf8Value source(isolate, args[0]);
   String::Utf8Value target(isolate, args[1]);
   String::Utf8Value fstype(isolate, args[2]);
   Local<BigInt> address64 = Local<BigInt>::Cast(args[3]);
   String::Utf8Value opts(isolate, args[4]);
-  unsigned long flags = reinterpret_cast<unsigned long>(address64->Uint64Value());
-  args.GetReturnValue().Set(Integer::New(isolate, mount(*source, *target, *fstype, flags, *opts)));
+  args.GetReturnValue().Set(Integer::New(isolate, 
+    mount(*source, *target, *fstype, address64->Uint64Value(), *opts)));
 }
 
 void just::fs::Umount(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   String::Utf8Value target(isolate, args[0]);
   int flags = 0;
-  if (args.Length() > 1) {
-    flags = Local<Integer>::Cast(args[1])->Value();
-  }
+  if (args.Length() > 1) flags = Local<Integer>::Cast(args[1])->Value();
   args.GetReturnValue().Set(Integer::New(isolate, umount2(*target, flags)));
 }
 
 void just::fs::Open(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
   String::Utf8Value fname(isolate, args[0]);
   int argc = args.Length();
   int flags = O_RDONLY;
-  if (argc > 1) {
-    flags = args[1]->Int32Value(context).ToChecked();
-  }
+  if (argc > 1) flags = Local<Integer>::Cast(args[1])->Value();
   int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
-  if (argc > 2) {
-    mode = args[2]->Int32Value(context).ToChecked();
-  }
+  if (argc > 2) mode = Local<Integer>::Cast(args[2])->Value();
   args.GetReturnValue().Set(Integer::New(isolate, open(*fname, flags, mode)));
 }
 
 void just::fs::Chmod(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
   int fd = Local<Integer>::Cast(args[0])->Value();
   int mode = Local<Integer>::Cast(args[1])->Value();
-  //int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
-  args.GetReturnValue().Set(Integer::New(isolate, fchmod(fd, mode)));
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), fchmod(fd, mode)));
 }
 
 void just::fs::Chown(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
   int fd = Local<Integer>::Cast(args[0])->Value();
   int uid = Local<Integer>::Cast(args[1])->Value();
   int gid = Local<Integer>::Cast(args[2])->Value();
-  args.GetReturnValue().Set(Integer::New(isolate, fchown(fd, uid, gid)));
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), 
+    fchown(fd, uid, gid)));
 }
 
 void just::fs::Ioctl(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-  int fd = args[0]->Int32Value(context).ToChecked();
-  int flags = args[1]->Int32Value(context).ToChecked();
+  int fd = Local<Integer>::Cast(args[0])->Value();
+  int flags = Local<Integer>::Cast(args[1])->Value();
   if (args.Length() > 2) {
     Local<ArrayBuffer> buf = args[2].As<ArrayBuffer>();
     std::shared_ptr<BackingStore> backing = buf->GetBackingStore();
-    args.GetReturnValue().Set(Integer::New(isolate, ioctl(fd, flags, backing->Data())));
+    args.GetReturnValue().Set(Integer::New(args.GetIsolate(), 
+      ioctl(fd, flags, backing->Data())));
     return;
   }
-  args.GetReturnValue().Set(Integer::New(isolate, ioctl(fd, flags)));
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), ioctl(fd, flags)));
 }
 
 void just::fs::Ftruncate(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-  int fd = args[0]->Int32Value(context).ToChecked();
-  off_t length = args[1]->Uint32Value(context).ToChecked();
-  args.GetReturnValue().Set(Integer::New(isolate, ftruncate(fd, length)));
+  int fd = Local<Integer>::Cast(args[0])->Value();
+  // todo - this should be a bigint?
+  off_t length = Local<Integer>::Cast(args[1])->Value();
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), 
+    ftruncate(fd, length)));
 }
 
 void just::fs::Fstat(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-  int fd = args[0]->Int32Value(context).ToChecked();
+  int fd = Local<Integer>::Cast(args[0])->Value();
   Local<BigUint64Array> answer = args[1].As<BigUint64Array>();
   Local<ArrayBuffer> ab = answer->Buffer();
   std::shared_ptr<BackingStore> backing = ab->GetBackingStore();
   uint64_t *fields = static_cast<uint64_t *>(backing->Data());
   struct stat s;
   int rc = fstat(fd, &s);
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), rc));
   if (rc == 0) {
     fields[0] = s.st_dev;
     fields[1] = s.st_mode;
@@ -174,29 +140,23 @@ void just::fs::Fstat(const FunctionCallbackInfo<Value> &args) {
     fields[15] = s.st_mtim.tv_nsec;
     fields[16] = s.st_ctim.tv_sec;
     fields[17] = s.st_ctim.tv_nsec;
-    args.GetReturnValue().Set(Integer::New(isolate, 0));
   }
-  args.GetReturnValue().Set(Integer::New(isolate, rc));
 }
 
 void just::fs::Chdir(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   String::Utf8Value path(isolate, args[0]);
   args.GetReturnValue().Set(Integer::New(isolate, chdir(*path)));
 }
 
 void just::fs::Rmdir(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   String::Utf8Value path(isolate, args[0]);
-  int rc = rmdir(*path);
-  args.GetReturnValue().Set(Integer::New(isolate, rc));
+  args.GetReturnValue().Set(Integer::New(isolate, rmdir(*path)));
 }
 
 void just::fs::Rename(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
   String::Utf8Value source(isolate, args[0]);
   String::Utf8Value dest(isolate, args[1]);
   args.GetReturnValue().Set(Integer::New(isolate, rename(*source, *dest)));
@@ -204,61 +164,46 @@ void just::fs::Rename(const FunctionCallbackInfo<Value> &args) {
 
 void just::fs::Mkdir(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
   String::Utf8Value path(isolate, args[0]);
   int mode = S_IRWXO | S_IRWXG | S_IRWXU;
-  int argc = args.Length();
-  if (argc > 1) {
-    mode = args[1]->Int32Value(context).ToChecked();
-  }
-  int rc = mkdir(*path, mode);
-  args.GetReturnValue().Set(Integer::New(isolate, rc));
+  if (args.Length() > 1) mode = Local<Integer>::Cast(args[1])->Value();
+  args.GetReturnValue().Set(Integer::New(isolate, 
+    mkdir(*path, mode)));
 }
 
 void just::fs::Lseek(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-  String::Utf8Value path(isolate, args[0]);
-  int fd = args[0]->Int32Value(context).ToChecked();
-  int off = args[1]->Int32Value(context).ToChecked();
-  args.GetReturnValue().Set(Integer::New(isolate, lseek(fd, off, SEEK_SET)));
+  int fd = Local<Integer>::Cast(args[0])->Value();
+  int off = Local<Integer>::Cast(args[1])->Value();
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), 
+    lseek(fd, off, SEEK_SET)));
 }
 
 void just::fs::Readdir(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
   String::Utf8Value path(isolate, args[0]);
   Local<Array> answer = args[1].As<Array>();
   DIR* directory = opendir(*path);
-  if (directory == NULL) {
-    args.GetReturnValue().Set(Null(isolate));
-    return;
-  }
+  if (directory == NULL) return;
   dirent* entry = readdir(directory);
-  if (entry == NULL) {
-    args.GetReturnValue().Set(Null(isolate));
-    return;
-  }
+  if (entry == NULL) return;
+  Local<Context> context = isolate->GetCurrentContext();
   int i = 0;
   while (entry) {
     Local<Object> o = Object::New(isolate);
     o->Set(context, String::NewFromUtf8Literal(isolate, "name", 
-      NewStringType::kNormal), 
+      NewStringType::kInternalized), 
       String::NewFromUtf8(isolate, entry->d_name).ToLocalChecked()).Check();
     o->Set(context, String::NewFromUtf8Literal(isolate, "type", 
-      NewStringType::kNormal), 
+      NewStringType::kInternalized), 
       Integer::New(isolate, entry->d_type)).Check();
     o->Set(context, String::NewFromUtf8Literal(isolate, "ino", 
-      NewStringType::kNormal), 
+      NewStringType::kInternalized), 
       Integer::New(isolate, entry->d_ino)).Check();
     o->Set(context, String::NewFromUtf8Literal(isolate, "off", 
-      NewStringType::kNormal), 
+      NewStringType::kInternalized), 
       Integer::New(isolate, entry->d_off)).Check();
     o->Set(context, String::NewFromUtf8Literal(isolate, "reclen", 
-      NewStringType::kNormal), 
+      NewStringType::kInternalized), 
         Integer::New(isolate, entry->d_reclen)).Check();
     answer->Set(context, i++, o).Check();
     entry = readdir(directory);
@@ -287,7 +232,6 @@ void just::fs::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, fs, "mknod", just::fs::Mknod);
   SET_METHOD(isolate, fs, "mkfifo", just::fs::Mkfifo);
   SET_METHOD(isolate, fs, "realpath", just::fs::Realpath);
-  SET_METHOD(isolate, fs, "utime", just::fs::Utime);
 
   SET_METHOD(isolate, fs, "chmod", just::fs::Chmod);
   SET_METHOD(isolate, fs, "chown", just::fs::Chown);
@@ -371,6 +315,10 @@ void just::fs::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, fs, "S_IFDIR", Integer::New(isolate, S_IFDIR));
   SET_VALUE(isolate, fs, "S_IFCHR", Integer::New(isolate, S_IFCHR));
   SET_VALUE(isolate, fs, "S_IFIFO", Integer::New(isolate, S_IFIFO));
+
+  SET_VALUE(isolate, fs, "UTIME_NOW", Integer::New(isolate, UTIME_NOW));
+  SET_VALUE(isolate, fs, "UTIME_OMIT", Integer::New(isolate, UTIME_OMIT));
+  
   // mount.h constants
   SET_VALUE(isolate, fs, "MS_MGC_VAL", Integer::New(isolate, MS_MGC_VAL));
   SET_VALUE(isolate, fs, "MS_MGC_MSK", Integer::New(isolate, MS_MGC_MSK));
