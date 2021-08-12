@@ -44,14 +44,6 @@ void ParseRequests(const FunctionCallbackInfo<Value> &args);
 void ParseResponses(const FunctionCallbackInfo<Value> &args);
 void ParseRequestsHandle(const FunctionCallbackInfo<Value> &args);
 void ParseResponsesHandle(const FunctionCallbackInfo<Value> &args);
-//void ParseRequestsHandle2(const FunctionCallbackInfo<Value> &args);
-//void ParseResponsesHandle2(const FunctionCallbackInfo<Value> &args);
-//void ParseRequestsHandle3(const FunctionCallbackInfo<Value> &args);
-//void ParseResponsesHandle3(const FunctionCallbackInfo<Value> &args);
-//void ParseRequestsHandle4(const FunctionCallbackInfo<Value> &args);
-//void ParseResponsesHandle4(const FunctionCallbackInfo<Value> &args);
-//void ParseRequestsHandle5(const FunctionCallbackInfo<Value> &args);
-//void ParseResponsesHandle5(const FunctionCallbackInfo<Value> &args);
 void CreateHandle(const FunctionCallbackInfo<Value> &args);
 void Init(Isolate* isolate, Local<ObjectTemplate> target);
 
