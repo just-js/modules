@@ -38,7 +38,6 @@ void Write(const FunctionCallbackInfo<Value> &args);
 void Splice(const FunctionCallbackInfo<Value> &args);
 void SendFile(const FunctionCallbackInfo<Value> &args);
 void WriteString(const FunctionCallbackInfo<Value> &args);
-void Writev(const FunctionCallbackInfo<Value> &args);
 void Send(const FunctionCallbackInfo<Value> &args);
 void SendString(const FunctionCallbackInfo<Value> &args);
 void Close(const FunctionCallbackInfo<Value> &args);
