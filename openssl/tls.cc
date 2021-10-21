@@ -14,6 +14,7 @@ void just::tls::Shutdown(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
+  // todo: check for empty
   SSL* ssl = (SSL*)ab->GetAlignedPointerFromInternalField(1);
   args.GetReturnValue().Set(Integer::New(isolate, SSL_shutdown(ssl)));
 }
@@ -22,6 +23,7 @@ void just::tls::GetServerName(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
+  // todo: check for empty
   SSL* ssl = (SSL*)ab->GetAlignedPointerFromInternalField(1);
   const char* serverName = SSL_get_servername(ssl, SSL_get_servername_type(ssl));
   args.GetReturnValue().Set(String::NewFromUtf8(isolate, serverName, 
@@ -32,6 +34,7 @@ void just::tls::Free(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
+  // todo: check for empty
   SSL* ssl = (SSL*)ab->GetAlignedPointerFromInternalField(1);
   SSL_free(ssl);
   args.GetReturnValue().Set(Integer::New(isolate, 0));
@@ -42,6 +45,7 @@ void just::tls::Read(const FunctionCallbackInfo<Value> &args) {
   HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
+  // todo: check for empty
   SSL* ssl = (SSL*)ab->GetAlignedPointerFromInternalField(1);
   std::shared_ptr<BackingStore> buf = ab->GetBackingStore();
   int argc = args.Length();
@@ -63,6 +67,7 @@ void just::tls::Write(const FunctionCallbackInfo<Value> &args) {
   HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
+  // todo: check for empty
   SSL* ssl = (SSL*)ab->GetAlignedPointerFromInternalField(1);
   //fprintf(stderr, "ssl %lu", (uint64_t)ssl);
   std::shared_ptr<BackingStore> buf = ab->GetBackingStore();
@@ -116,6 +121,7 @@ void just::tls::Handshake(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
+  // todo: check for empty
   SSL* ssl = (SSL*)ab->GetAlignedPointerFromInternalField(1);
   args.GetReturnValue().Set(Integer::New(isolate, SSL_do_handshake(ssl)));
 }
@@ -124,6 +130,7 @@ void just::tls::SetCiphers(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
+  // todo: check for empty
   SSL_CTX* ctx = (SSL_CTX*)ab->GetAlignedPointerFromInternalField(1);
   String::Utf8Value ciphers(isolate, args[1]);
   args.GetReturnValue().Set(Integer::New(isolate, SSL_CTX_set_ciphersuites(ctx, *ciphers)));
@@ -153,6 +160,7 @@ void just::tls::SetContext(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
+  // todo: check for empty
   SSL* ssl = (SSL*)ab->GetAlignedPointerFromInternalField(1);
   ab = args[1].As<ArrayBuffer>();
   SSL_CTX* ctx = (SSL_CTX*)ab->GetAlignedPointerFromInternalField(1);
@@ -165,6 +173,7 @@ void just::tls::AcceptSocket(const FunctionCallbackInfo<Value> &args) {
   Local<Context> context = isolate->GetCurrentContext();
   int fd = args[0]->Uint32Value(context).ToChecked();
   Local<ArrayBuffer> ab = args[1].As<ArrayBuffer>();
+  // todo: check for empty
   SSL_CTX* ctx = (SSL_CTX*)ab->GetAlignedPointerFromInternalField(1);
   SSL* ssl = SSL_new(ctx);
   SSL_set_fd(ssl, fd);
@@ -181,6 +190,7 @@ void just::tls::ConnectSocket(const FunctionCallbackInfo<Value> &args) {
   Local<Context> context = isolate->GetCurrentContext();
   int fd = args[0]->Uint32Value(context).ToChecked();
   Local<ArrayBuffer> ab = args[1].As<ArrayBuffer>();
+  // todo: check for empty
   SSL_CTX* ctx = (SSL_CTX*)ab->GetAlignedPointerFromInternalField(1);
   SSL* ssl = SSL_new(ctx);
   SSL_set_fd(ssl, fd);
@@ -247,6 +257,7 @@ void just::tls::DestroyContext(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
+  // todo: check for empty
   SSL_CTX* ctx = (SSL_CTX*)ab->GetAlignedPointerFromInternalField(1);
   SSL_CTX_free(ctx);
 }

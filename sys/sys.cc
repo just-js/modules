@@ -644,10 +644,18 @@ void just::sys::MMap(const FunctionCallbackInfo<Value> &args) {
   if (argc > 4) offset = Local<Integer>::Cast(args[4])->Value();
   void* data = mmap(0, len, prot, flags, fd, offset);
   if (data == MAP_FAILED) return;
-  std::unique_ptr<BackingStore> backing = SharedArrayBuffer::NewBackingStore(
-      data, len, [](void*, size_t, void*){}, nullptr);
-  args.GetReturnValue().Set(SharedArrayBuffer::New(args.GetIsolate(), 
-    std::move(backing)));
+  if ((flags & MAP_SHARED) > 0) {
+    std::unique_ptr<BackingStore> backing = SharedArrayBuffer::NewBackingStore(
+        data, len, [](void*, size_t, void*){}, nullptr);
+    args.GetReturnValue().Set(SharedArrayBuffer::New(args.GetIsolate(), 
+      std::move(backing)));
+    return;
+  }
+  std::unique_ptr<BackingStore> backing = ArrayBuffer::NewBackingStore(data, len, 
+      [](void*, size_t, void*){}, nullptr);
+  Local<ArrayBuffer> ab =
+      ArrayBuffer::New(args.GetIsolate(), std::move(backing));
+  args.GetReturnValue().Set(ab);
 }
 
 void just::sys::MUnmap(const FunctionCallbackInfo<Value> &args) {
@@ -911,6 +919,7 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, sys, "PROT_READ", Integer::New(isolate, PROT_READ));
   SET_VALUE(isolate, sys, "PROT_WRITE", Integer::New(isolate, PROT_WRITE));
   SET_VALUE(isolate, sys, "MAP_SHARED", Integer::New(isolate, MAP_SHARED));
+  SET_VALUE(isolate, sys, "MAP_PRIVATE", Integer::New(isolate, MAP_PRIVATE));
   SET_VALUE(isolate, sys, "MAP_ANONYMOUS", Integer::New(isolate, MAP_ANONYMOUS));
   SET_VALUE(isolate, sys, "RB_AUTOBOOT", Integer::New(isolate, RB_AUTOBOOT));
   SET_VALUE(isolate, sys, "RB_HALT_SYSTEM", Integer::New(isolate, RB_HALT_SYSTEM));
@@ -923,6 +932,11 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, sys, "WCONTINUED", Integer::New(isolate, WCONTINUED));
   SET_VALUE(isolate, sys, "RUSAGE_SELF", Integer::New(isolate, RUSAGE_SELF));
   SET_VALUE(isolate, sys, "RUSAGE_THREAD", Integer::New(isolate, RUSAGE_THREAD));
+
+  SET_VALUE(isolate, sys, "ENOMEM", Integer::New(isolate, ENOMEM));
+  SET_VALUE(isolate, sys, "EINVAL", Integer::New(isolate, EINVAL));
+  SET_VALUE(isolate, sys, "EFAULT", Integer::New(isolate, EFAULT));
+
 #ifdef __BYTE_ORDER
   // These don't work on alpine. will have to investigate why not
   SET_VALUE(isolate, sys, "BYTE_ORDER", Integer::New(isolate, __BYTE_ORDER));
