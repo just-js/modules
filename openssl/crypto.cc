@@ -154,6 +154,8 @@ void just::crypto::Init(Isolate* isolate, Local<ObjectTemplate> target) {
     EVP_add_digest(EVP_sha1());
     EVP_add_digest(EVP_sha256());
     EVP_add_digest(EVP_sha512());
+    EVP_add_digest(EVP_sha512_224());
+    EVP_add_digest(EVP_sha512_256());
     EVP_add_digest(EVP_sha224());
     EVP_add_digest(EVP_md4());
     EVP_add_digest(EVP_sha384());
@@ -171,6 +173,10 @@ void just::crypto::Init(Isolate* isolate, Local<ObjectTemplate> target) {
     OBJ_txt2nid("sha256")));
   SET_VALUE(isolate, module, "SHA512", Integer::New(isolate, 
     OBJ_txt2nid("sha512")));
+  SET_VALUE(isolate, module, "SHA512-224", Integer::New(isolate, 
+    OBJ_txt2nid("sha512224")));
+  SET_VALUE(isolate, module, "SHA512-256", Integer::New(isolate, 
+    OBJ_txt2nid("sha512256")));
   SET_VALUE(isolate, module, "MD4", Integer::New(isolate, 
     OBJ_txt2nid("md4")));
   SET_VALUE(isolate, module, "SHA224", Integer::New(isolate, 
