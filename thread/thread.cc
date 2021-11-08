@@ -3,10 +3,10 @@
 void* just::thread::startThread(void *data) {
   threadContext* ctx = (threadContext*)data;
   just::CreateIsolate(ctx->argc, ctx->argv, ctx->main, 
-    ctx->main_len, ctx->source, ctx->source_len, &ctx->buf, ctx->fd);
+    ctx->main_len, ctx->source, ctx->source_len, &ctx->buf, ctx->fd, just::hrtime());
   free(ctx->source);
   free(ctx);
-  return NULL;
+  return 0;
 }
 
 void just::thread::Spawn(const FunctionCallbackInfo<Value> &args) {
@@ -107,6 +107,10 @@ void just::thread::TryJoin(const FunctionCallbackInfo<Value> &args) {
   int r = pthread_tryjoin_np(tid, &tret);
   if (r != 0) {
     args.GetReturnValue().Set(Integer::New(args.GetIsolate(), -1));
+    return;
+  }
+  if (tret == NULL) {
+    args.GetReturnValue().Set(Integer::New(args.GetIsolate(), 0));
     return;
   }
   args.GetReturnValue().Set(Integer::New(args.GetIsolate(), *(int*)tret));
