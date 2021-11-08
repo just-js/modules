@@ -22,7 +22,7 @@ void Read(const FunctionCallbackInfo<Value> &args);
 void Write(const FunctionCallbackInfo<Value> &args);
 void Handshake(const FunctionCallbackInfo<Value> &args);
 void SetCiphers(const FunctionCallbackInfo<Value> &args);
-//void SetSNICallback(const FunctionCallbackInfo<Value> &args);
+void SetSNICallback(const FunctionCallbackInfo<Value> &args);
 void AcceptSocket(const FunctionCallbackInfo<Value> &args);
 void ConnectSocket(const FunctionCallbackInfo<Value> &args);
 void ServerContext(const FunctionCallbackInfo<Value> &args);
@@ -30,6 +30,7 @@ void ClientContext(const FunctionCallbackInfo<Value> &args);
 void DestroyContext(const FunctionCallbackInfo<Value> &args);
 void GetServerName(const FunctionCallbackInfo<Value> &args);
 void SetContext(const FunctionCallbackInfo<Value> &args);
+void GetCertificate(const FunctionCallbackInfo<Value> &args);
 void Init(Isolate* isolate, Local<ObjectTemplate> target);
 
 int SelectSNIContextCallback(SSL* ssl, int* ad, void* arg);

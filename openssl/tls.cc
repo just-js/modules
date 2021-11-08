@@ -91,7 +91,6 @@ void just::tls::Write(const FunctionCallbackInfo<Value> &args) {
     (void*)dest, len)));
 }
 
-/*
 void just::tls::GetCertificate(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -115,7 +114,6 @@ void just::tls::GetCertificate(const FunctionCallbackInfo<Value> &args) {
   }
   args.GetReturnValue().Set(Integer::New(isolate, 0));
 }
-*/
 
 void just::tls::Handshake(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
@@ -136,7 +134,6 @@ void just::tls::SetCiphers(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, SSL_CTX_set_ciphersuites(ctx, *ciphers)));
 }
 
-/*
 int just::tls::SelectSNIContextCallback(SSL* ssl, int* ad, void* arg) {
   const char* servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   fprintf(stderr, "%s\n", servername);
@@ -154,7 +151,6 @@ void just::tls::SetSNICallback(const FunctionCallbackInfo<Value> &args) {
   //String::Utf8Value ciphers(isolate, args[1]);
   //args.GetReturnValue().Set(Integer::New(isolate, SSL_CTX_set_ciphersuites(ctx, *ciphers)));
 }
-*/
 
 void just::tls::SetContext(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
@@ -320,8 +316,9 @@ void just::tls::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, module, "read", Read);
   SET_METHOD(isolate, module, "write", Write);
   SET_METHOD(isolate, module, "shutdown", Shutdown);
-  //SET_METHOD(isolate, module, "setSNICallback", SetSNICallback);
+  SET_METHOD(isolate, module, "setSNICallback", SetSNICallback);
   SET_METHOD(isolate, module, "setContext", SetContext);
+  SET_METHOD(isolate, module, "getCertificate", GetCertificate);
 
   SET_METHOD(isolate, module, "free", Free);
   SET_MODULE(isolate, target, "tls", module);
