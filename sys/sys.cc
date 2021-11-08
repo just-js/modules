@@ -1,12 +1,5 @@
 #include "sys.h"
 
-uint64_t just::sys::hrtime() {
-  struct timespec t;
-  clock_t clock_id = CLOCK_MONOTONIC;
-  if (clock_gettime(clock_id, &t)) return 0;
-  return t.tv_sec * (uint64_t) 1e9 + t.tv_nsec;
-}
-
 void just::sys::WaitPID(const FunctionCallbackInfo<Value> &args) {
   Local<ArrayBuffer> ab = args[0].As<Int32Array>()->Buffer();
   std::shared_ptr<BackingStore> backing = ab->GetBackingStore();
@@ -114,7 +107,7 @@ void just::sys::Spawn(const FunctionCallbackInfo<Value> &args) {
 }
 
 void just::sys::HRTime(const FunctionCallbackInfo<Value> &args) {
-  args.GetReturnValue().Set(BigInt::New(args.GetIsolate(), just::sys::hrtime()));
+  args.GetReturnValue().Set(BigInt::New(args.GetIsolate(), just::hrtime()));
 }
 
 void just::sys::RunMicroTasks(const FunctionCallbackInfo<Value> &args) {
