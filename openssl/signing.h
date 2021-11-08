@@ -8,11 +8,13 @@
 namespace just {
 namespace signing {
 
+void CreateKeypair(const FunctionCallbackInfo<Value> &args);
 void LoadPublicKey(const FunctionCallbackInfo<Value> &args);
 void ExtractRSAPublicKey(const FunctionCallbackInfo<Value> &args);
 void LoadCertificate(const FunctionCallbackInfo<Value> &args);
 void Verify(const FunctionCallbackInfo<Value> &args);
 void LoadPrivateKey(const FunctionCallbackInfo<Value> &args);
+void GenerateCSR(const FunctionCallbackInfo<Value> &args);
 void Sign(const FunctionCallbackInfo<Value> &args);
 void Init(Isolate* isolate, Local<ObjectTemplate> target);
 
