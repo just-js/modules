@@ -41,7 +41,6 @@ void just::udp::SendMsg(const FunctionCallbackInfo<Value> &args) {
   int fd = Local<Integer>::Cast(args[0])->Value();
   Local<ArrayBuffer> ab = args[1].As<ArrayBuffer>();
   std::shared_ptr<BackingStore> backing = ab->GetBackingStore();
-  String::Utf8Value address(isolate, args[2]);
   int port = Local<Integer>::Cast(args[3])->Value();
   size_t len = backing->ByteLength();
   if (argc > 4) len = Local<Integer>::Cast(args[4])->Value();
@@ -53,7 +52,12 @@ void just::udp::SendMsg(const FunctionCallbackInfo<Value> &args) {
   struct sockaddr_in client_addr;
   client_addr.sin_family = AF_INET;
   client_addr.sin_port = htons(port);
-  inet_aton(*address, &client_addr.sin_addr);
+  if (argc > 5) {
+    client_addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+  } else {
+    String::Utf8Value address(isolate, args[2]);
+    inet_aton(*address, &client_addr.sin_addr);
+  }
   bzero(&(client_addr.sin_zero), 8);
   h.msg_name = &client_addr;
   h.msg_namelen = sizeof(struct sockaddr_in);
@@ -66,5 +70,6 @@ void just::udp::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> module = ObjectTemplate::New(isolate);
   SET_METHOD(isolate, module, "sendmsg", SendMsg);
   SET_METHOD(isolate, module, "recvmsg", RecvMsg);
+  SET_VALUE(isolate, module, "SO_BROADCAST", Integer::New(isolate, SO_BROADCAST));
   SET_MODULE(isolate, target, "udp", module);
 }
