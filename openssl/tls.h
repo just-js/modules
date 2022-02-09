@@ -29,6 +29,7 @@ void ServerContext(const FunctionCallbackInfo<Value> &args);
 void ClientContext(const FunctionCallbackInfo<Value> &args);
 void DestroyContext(const FunctionCallbackInfo<Value> &args);
 void GetServerName(const FunctionCallbackInfo<Value> &args);
+void SetServerName(const FunctionCallbackInfo<Value> &args);
 void SetContext(const FunctionCallbackInfo<Value> &args);
 void GetCertificate(const FunctionCallbackInfo<Value> &args);
 void Init(Isolate* isolate, Local<ObjectTemplate> target);

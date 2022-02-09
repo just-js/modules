@@ -93,7 +93,6 @@ uint64_t hrtime();
 
 void WaitPID(const FunctionCallbackInfo<Value> &args);
 void Spawn(const FunctionCallbackInfo<Value> &args);
-void HRTime(const FunctionCallbackInfo<Value> &args);
 void RunMicroTasks(const FunctionCallbackInfo<Value> &args);
 void EnqueueMicrotask(const FunctionCallbackInfo<Value>& args);
 void Exit(const FunctionCallbackInfo<Value>& args);

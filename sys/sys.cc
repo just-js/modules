@@ -106,10 +106,6 @@ void just::sys::Spawn(const FunctionCallbackInfo<Value> &args) {
   free(argv);
 }
 
-void just::sys::HRTime(const FunctionCallbackInfo<Value> &args) {
-  args.GetReturnValue().Set(BigInt::New(args.GetIsolate(), just::hrtime()));
-}
-
 void just::sys::RunMicroTasks(const FunctionCallbackInfo<Value> &args) {
   args.GetIsolate()->PerformMicrotaskCheckpoint();
 }

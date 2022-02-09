@@ -1,0 +1,4 @@
+{
+  "obj": ["deps/sqlite/build/.libs/libsqlite3.a"],
+  "lib": ["z"]
+}

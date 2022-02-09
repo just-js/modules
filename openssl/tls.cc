@@ -30,6 +30,15 @@ void just::tls::GetServerName(const FunctionCallbackInfo<Value> &args) {
     NewStringType::kNormal, strlen(serverName)).ToLocalChecked());
 }
 
+void just::tls::SetServerName(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
+  SSL* ssl = (SSL*)ab->GetAlignedPointerFromInternalField(1);
+  String::Utf8Value serverName(isolate, args[1]);
+  args.GetReturnValue().Set(Integer::New(isolate, SSL_set_tlsext_host_name(ssl, *serverName)));
+}
+
 void just::tls::Free(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
@@ -176,7 +185,7 @@ void just::tls::AcceptSocket(const FunctionCallbackInfo<Value> &args) {
   SSL_set_accept_state(ssl);
   Local<ArrayBuffer> buf = args[2].As<ArrayBuffer>();
   buf->SetAlignedPointerInInternalField(1, ssl);
-  args.GetReturnValue().Set(Integer::New(isolate, SSL_do_handshake(ssl)));
+  args.GetReturnValue().Set(Integer::New(isolate, SSL_accept(ssl)));
   //args.GetReturnValue().Set(Integer::New(isolate, 1));
 }
 
@@ -193,6 +202,10 @@ void just::tls::ConnectSocket(const FunctionCallbackInfo<Value> &args) {
   SSL_set_connect_state(ssl);
   Local<ArrayBuffer> buf = args[2].As<ArrayBuffer>();
   buf->SetAlignedPointerInInternalField(1, ssl);
+  if (args.Length() > 3) {
+    String::Utf8Value serverName(isolate, args[3]);
+    args.GetReturnValue().Set(Integer::New(isolate, SSL_set_tlsext_host_name(ssl, *serverName)));
+  }
   // todo: should this be SSL_connect(ssl)?
   args.GetReturnValue().Set(Integer::New(isolate, SSL_do_handshake(ssl)));
 }
@@ -236,15 +249,26 @@ void just::tls::ClientContext(const FunctionCallbackInfo<Value> &args) {
   meth = TLS_client_method();
   SSL_CTX* ctx = SSL_CTX_new(meth);
   ab->SetAlignedPointerInInternalField(1, ctx);
+  int options = SSL_OP_ALL | SSL_OP_NO_RENEGOTIATION | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 | SSL_OP_NO_DTLSv1 | SSL_OP_NO_DTLSv1_2;
   int argc = args.Length();
   if (argc > 1) {
-    String::Utf8Value cert(isolate, args[1]);
-    SSL_CTX_use_certificate_file(ctx, *cert, SSL_FILETYPE_PEM);
+    Local<BigInt> i64 = Local<BigInt>::Cast(args[1]);
+    options = i64->Uint64Value();
   }
   if (argc > 2) {
-    String::Utf8Value key(isolate, args[2]);
+    String::Utf8Value ciphers(isolate, args[2]);
+    SSL_CTX_set_cipher_list(ctx, *ciphers);
+    SSL_CTX_set_ciphersuites(ctx, *ciphers);
+  }
+  if (argc > 3) {
+    String::Utf8Value cert(isolate, args[3]);
+    SSL_CTX_use_certificate_file(ctx, *cert, SSL_FILETYPE_PEM);
+  }
+  if (argc > 4) {
+    String::Utf8Value key(isolate, args[4]);
     SSL_CTX_use_PrivateKey_file(ctx, *key, SSL_FILETYPE_PEM);
   }
+  SSL_CTX_set_options(ctx, options);
   // todo: check private key
   args.GetReturnValue().Set(ab);
 }
@@ -310,6 +334,7 @@ void just::tls::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, module, "acceptSocket", AcceptSocket);
   SET_METHOD(isolate, module, "connectSocket", ConnectSocket);
   SET_METHOD(isolate, module, "getServerName", GetServerName);
+  SET_METHOD(isolate, module, "setServerName", SetServerName);
   SET_METHOD(isolate, module, "setCiphers", SetCiphers);
   SET_METHOD(isolate, module, "handshake", Handshake);
   SET_METHOD(isolate, module, "error", Error);

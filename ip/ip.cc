@@ -143,7 +143,7 @@ void just::ip::TunTap(const FunctionCallbackInfo<Value> &args) {
   int r = ioctl(fd, flags, (void*)&ifr);
   if (r == 0 && args.Length() > 3) {
     Local<ArrayBuffer> buf = args[3].As<ArrayBuffer>();
-    strncpy((char*)buf->GetBackingStore()->Data(), ifr.ifr_name, IFNAMSIZ);
+    //strncpy((char*)buf->GetBackingStore()->Data(), ifr.ifr_name, IFNAMSIZ);
     //memcpy(buf->GetBackingStore()->Data(), ifr.ifr_hwaddr.sa_data, 6);
   }
   args.GetReturnValue().Set(Integer::New(isolate, r));

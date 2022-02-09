@@ -9,9 +9,10 @@ void just::http::GetUrl(const FunctionCallbackInfo<Value> &args) {
 
 void just::http::GetMethod(const FunctionCallbackInfo<Value> &args) {
   int index = Local<Integer>::Cast(args[0])->Value();
-  args.GetReturnValue().Set(String::NewFromOneByte(args.GetIsolate(), 
-    (const uint8_t*)state[index].method, 
-    NewStringType::kInternalized, state[index].method_len).ToLocalChecked());
+  //args.GetReturnValue().Set(String::NewFromOneByte(args.GetIsolate(), 
+  //  (const uint8_t*)state[index].method, 
+  //  NewStringType::kInternalized, state[index].method_len).ToLocalChecked());
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), state[index].method[0]));
 }
 
 void just::http::GetMethodAndUrl(const FunctionCallbackInfo<Value> &args) {
