@@ -1,5 +1,5 @@
 #!/bin/bash
-MODULES=${2:-"blake3 encode epoll ffi fs html http inspector memory net openssl pg seccomp sha1 signal sys tcc thread udp vm zlib profiler rocksdb"}
+MODULES=${2:-"blake3 encode epoll ffi fs html http inspector io ip jkvm memory net openssl pg profiler rocksdb seccomp sha1 signal sqlite sys tcc thread udp vm zlib"}
 for m in $MODULES
 do
   make -C $m/ clean library
