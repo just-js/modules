@@ -47,15 +47,19 @@ void just::vm::CompileInContext(const FunctionCallbackInfo<Value> &args) {
   TryCatch try_catch(isolate);
   Local<String> source = args[1].As<String>();
   Local<String> path = args[2].As<String>();
-  ScriptOrigin baseorigin(path, // resource name
-    Integer::New(isolate, 0), // line offset
-    Integer::New(isolate, 0),  // column offset
-    False(isolate), // is shared cross-origin
-    Local<Integer>(),  // script id
+  Local<v8::PrimitiveArray> opts =
+      v8::PrimitiveArray::New(isolate, 1);
+  opts->Set(isolate, 0, v8::Number::New(isolate, 1));
+  ScriptOrigin baseorigin(isolate, path, // resource name
+    0, // line offset
+    0,  // column offset
+    false, // is shared cross-origin
+    -1,  // script id
     Local<Value>(), // source map url
-    False(isolate), // is opaque
-    False(isolate), // is wasm
-    False(isolate)); // is module
+    false, // is opaque
+    false, // is wasm
+    false, // is module
+    opts);
   Local<Script> script;
   ScriptCompiler::Source basescript(source, baseorigin);
   bool ok = ScriptCompiler::Compile(context, &basescript).ToLocal(&script);
@@ -78,15 +82,20 @@ void just::vm::CompileAndRunInContext(const FunctionCallbackInfo<Value> &args) {
   TryCatch try_catch(isolate);
   Local<String> source = args[1].As<String>();
   Local<String> path = args[2].As<String>();
-  ScriptOrigin baseorigin(path, // resource name
-    Integer::New(isolate, 0), // line offset
-    Integer::New(isolate, 0),  // column offset
-    False(isolate), // is shared cross-origin
-    Local<Integer>(),  // script id
+
+  Local<v8::PrimitiveArray> opts =
+      v8::PrimitiveArray::New(isolate, 1);
+  opts->Set(isolate, 0, v8::Number::New(isolate, 1));
+  ScriptOrigin baseorigin(isolate, path, // resource name
+    0, // line offset
+    0,  // column offset
+    false, // is shared cross-origin
+    -1,  // script id
     Local<Value>(), // source map url
-    False(isolate), // is opaque
-    False(isolate), // is wasm
-    False(isolate)); // is module
+    false, // is opaque
+    false, // is wasm
+    false, // is module
+    opts);
   Local<Script> script;
   ScriptCompiler::Source basescript(source, baseorigin);
   bool ok = ScriptCompiler::Compile(context, &basescript).ToLocal(&script);
@@ -144,10 +153,20 @@ void just::vm::CompileScript(const FunctionCallbackInfo<Value> &args) {
       context_extensions.push_back(val.As<Object>());
     }
   }
-  ScriptOrigin baseorigin(path, // resource name
-    Integer::New(isolate, 0), // line offset
-    Integer::New(isolate, 0),  // column offset
-    True(isolate));
+  Local<v8::PrimitiveArray> opts =
+      v8::PrimitiveArray::New(isolate, 1);
+  opts->Set(isolate, 0, v8::Number::New(isolate, 1));
+  ScriptOrigin baseorigin(isolate, path, // resource name
+    0, // line offset
+    0,  // column offset
+    false, // is shared cross-origin
+    -1,  // script id
+    Local<Value>(), // source map url
+    false, // is opaque
+    false, // is wasm
+    false, // is module
+    opts);
+
   Context::Scope scope(context);
   ScriptCompiler::Source basescript(source, baseorigin);
   MaybeLocal<Function> maybe_fn = ScriptCompiler::CompileFunctionInContext(
@@ -169,15 +188,20 @@ void just::vm::RunScript(const FunctionCallbackInfo<Value> &args) {
   TryCatch try_catch(isolate);
   Local<String> source = args[0].As<String>();
   Local<String> path = args[1].As<String>();
-  ScriptOrigin baseorigin(path, // resource name
-    Integer::New(isolate, 0), // line offset
-    Integer::New(isolate, 0),  // column offset
-    False(isolate), // is shared cross-origin
-    Local<Integer>(),  // script id
+
+  Local<v8::PrimitiveArray> opts =
+      v8::PrimitiveArray::New(isolate, 1);
+  opts->Set(isolate, 0, v8::Number::New(isolate, 1));
+  ScriptOrigin baseorigin(isolate, path, // resource name
+    0, // line offset
+    0,  // column offset
+    false, // is shared cross-origin
+    -1,  // script id
     Local<Value>(), // source map url
-    False(isolate), // is opaque
-    False(isolate), // is wasm
-    False(isolate)); // is module
+    false, // is opaque
+    false, // is wasm
+    false, // is module
+    opts);
   Local<Script> script;
   ScriptCompiler::Source basescript(source, baseorigin);
   bool ok = ScriptCompiler::Compile(context, &basescript).ToLocal(&script);
@@ -202,15 +226,20 @@ void just::vm::RunModule(const FunctionCallbackInfo<Value> &args) {
   TryCatch try_catch(isolate);
   Local<String> source = args[0].As<String>();
   Local<String> path = args[1].As<String>();
-  ScriptOrigin baseorigin(path, // resource name
-    Integer::New(isolate, 0), // line offset
-    Integer::New(isolate, 0),  // column offset
-    False(isolate), // is shared cross-origin
-    Local<Integer>(),  // script id
+
+  Local<v8::PrimitiveArray> opts =
+      v8::PrimitiveArray::New(isolate, 1);
+  opts->Set(isolate, 0, v8::Number::New(isolate, 1));
+  ScriptOrigin baseorigin(isolate, path, // resource name
+    0, // line offset
+    0,  // column offset
+    false, // is shared cross-origin
+    -1,  // script id
     Local<Value>(), // source map url
-    False(isolate), // is opaque
-    False(isolate), // is wasm
-    True(isolate)); // is module
+    false, // is opaque
+    false, // is wasm
+    true, // is module
+    opts);
   ScriptCompiler::Source basescript(source, baseorigin);
   Local<Module> module;
   bool ok = ScriptCompiler::CompileModule(isolate, 
@@ -221,6 +250,7 @@ void just::vm::RunModule(const FunctionCallbackInfo<Value> &args) {
     }
     return;
   }
+/*
   Maybe<bool> ok2 = module->InstantiateModule(context, OnModuleInstantiate);
   if (ok2.IsNothing()) {
     if (try_catch.HasCaught() && !try_catch.HasTerminated()) {
@@ -228,6 +258,7 @@ void just::vm::RunModule(const FunctionCallbackInfo<Value> &args) {
     }
     return;
   }
+*/
   MaybeLocal<Value> result = module->Evaluate(context);
   if (try_catch.HasCaught() && !try_catch.HasTerminated()) {
     try_catch.ReThrow();
