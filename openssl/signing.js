@@ -1,4 +1,4 @@
-const { signing } = just.library('signing', './openssl.so')
+const { signing } = just.library('signing', 'openssl.so')
 const { encode } = just.library('encode')
 
 const pubKey = ArrayBuffer.fromString(`
@@ -47,33 +47,33 @@ wZ+l/HS/227L4OraUWNEjtg=
 const externalSig = 'aaz0p6zQdFgRGXhm/1P2oSbAT/YX2a1cAI8NEou8r8oyvhG3VLKyniznjAgQUtyPBUD5QmzlPNFz/xfC/GUPCReXMmluZuImRxNNVaF4fapa15CVqL0bia8oV6KO7tVCwZcisJXacoab41n6NQUVu9Nkq9+ZFlgite3xiDp5Xa5L1HCuF7qGrlVsz/qLXlCP3z34DTiBkgLxlfhIiyu8mdd+VZpcr6NZB4Ue54hmOejUct6amoL13aXuvJa/Ct8AWL2NaAqrbmsOzik8KJEeSsxgM8UEwvgLF6E+YMtBe1tXhiuH8cVcjNX8py5M0zSPvpouf61fG19gRmS9Q2fhnA=='
 
 // load keys
-let rc = signing.loadPublicKey(pubKey)
+let rc = signing.RSA.loadPublicKey(pubKey)
 if (rc !== 0) throw new Error('Could not load public key')
-rc = signing.loadPrivateKey(privKey)
+rc = signing.RSA.loadPrivateKey(privKey)
 if (rc !== 0) throw new Error('Could not load private key')
 
 const payload = ArrayBuffer.fromString('My secret message.\n')
 
 // sign the payload with the private key
 const sig = new ArrayBuffer(256)
-rc = signing.sign(privKey, payload, sig)
+rc = signing.RSA.sign(privKey, payload, sig)
 if (rc < 0) throw new Error('Could not sign payload')
 
 const dest = new ArrayBuffer(1024)
 const base64 = dest.readString(encode.base64Encode(sig, dest))
 
 // verify the signature with the public key
-rc = signing.verify(pubKey, payload, sig)
+rc = signing.RSA.verify(pubKey, payload, sig)
 if (rc !== 0) throw new Error('Signature is Invalid')
 
 // verify the externally generated signature with the public key
 just.print(externalSig)
 encode.base64Decode(ArrayBuffer.fromString(externalSig), sig)
-rc = signing.verify(pubKey, payload, sig)
+rc = signing.RSA.verify(pubKey, payload, sig)
 if (rc !== 0) throw new Error('External Signature is Invalid')
 
 // verify the internally generated signature with the public key
 just.print(base64)
 encode.base64Decode(ArrayBuffer.fromString(base64), sig)
-rc = signing.verify(pubKey, payload, sig)
+rc = signing.RSA.verify(pubKey, payload, sig)
 if (rc !== 0) throw new Error('Internal Signature is Invalid')

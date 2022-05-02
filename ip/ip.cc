@@ -183,6 +183,7 @@ void just::ip::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, module, "IFF_NOARP", Integer::New(isolate, IFF_NOARP));
   SET_VALUE(isolate, module, "RTM_NEWADDR", Integer::New(isolate, RTM_NEWADDR));
   SET_VALUE(isolate, module, "RTM_DELADDR", Integer::New(isolate, RTM_DELADDR));
+  SET_VALUE(isolate, module, "IFF_MULTI_QUEUE", Integer::New(isolate, IFF_MULTI_QUEUE));
 
   SET_MODULE(isolate, target, "ip", module);
 }

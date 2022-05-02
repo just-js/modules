@@ -120,6 +120,7 @@ void just::signing::Verify(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, 0));
 }
 
+// https://www.openssl.org/docs/manmaster/man7/X25519.html
 void just::signing::CreateKeypair(const FunctionCallbackInfo<Value> &args) {
   // https://gist.github.com/grejdi/9361828
   Isolate *isolate = args.GetIsolate();
