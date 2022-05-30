@@ -35,6 +35,12 @@ void RegisterVFS(const FunctionCallbackInfo<Value> &args);
 void UnregisterVFS(const FunctionCallbackInfo<Value> &args);
 void Config(const FunctionCallbackInfo<Value> &args);
 void EnableShared(const FunctionCallbackInfo<Value> &args);
+void MemoryUsed(const FunctionCallbackInfo<Value> &args);
+void MemoryHighwater(const FunctionCallbackInfo<Value> &args);
+void ReleaseDBMemory(const FunctionCallbackInfo<Value> &args);
+void ReleaseMemory(const FunctionCallbackInfo<Value> &args);
+void ErrCode(const FunctionCallbackInfo<Value> &args);
+void ErrMessage(const FunctionCallbackInfo<Value> &args);
 
 void BindInt(const FunctionCallbackInfo<Value> &args);
 void BindInt64(const FunctionCallbackInfo<Value> &args);

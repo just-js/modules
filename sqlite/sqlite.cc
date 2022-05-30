@@ -333,10 +333,11 @@ void just::sqlite::CheckPoint(const FunctionCallbackInfo<Value> &args) {
   int mode = Local<Integer>::Cast(args[1])->Value();
   int logSize = 0;
   int framesCheckPointed = 0;
-  int ac = sqlite3_wal_checkpoint_v2(db, NULL, mode, &logSize, &framesCheckPointed);
+  int rc = sqlite3_wal_checkpoint_v2(db, NULL, mode, &logSize, &framesCheckPointed);
   Local<Array> result = Array::New(isolate);
   result->Set(context, 0, Integer::New(isolate, logSize)).Check();
   result->Set(context, 1, Integer::New(isolate, framesCheckPointed)).Check();
+  result->Set(context, 2, Integer::New(isolate, rc)).Check();
   args.GetReturnValue().Set(result);
 }
 
@@ -388,6 +389,44 @@ void just::sqlite::Config(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(isolate, sqlite3_db_config(db, op, val, 0)));
 }
 
+void just::sqlite::MemoryUsed(const FunctionCallbackInfo<Value> &args) {
+  args.GetReturnValue().Set(BigInt::New(args.GetIsolate(), sqlite3_memory_used()));
+}
+
+void just::sqlite::MemoryHighwater(const FunctionCallbackInfo<Value> &args) {
+  args.GetReturnValue().Set(BigInt::New(args.GetIsolate(), sqlite3_memory_highwater(0)));
+}
+
+void just::sqlite::ReleaseDBMemory(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Object> obj = args[0].As<Object>();
+  sqlite3* db = (sqlite3*)obj->GetAlignedPointerFromInternalField(0);
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), sqlite3_db_release_memory(db)));
+}
+
+void just::sqlite::ReleaseMemory(const FunctionCallbackInfo<Value> &args) {
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), sqlite3_release_memory(Local<Integer>::Cast(args[0])->Value())));
+}
+
+void just::sqlite::ErrCode(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Object> obj = args[0].As<Object>();
+  sqlite3* db = (sqlite3*)obj->GetAlignedPointerFromInternalField(0);
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), sqlite3_errcode(db)));
+}
+
+void just::sqlite::ErrMessage(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Object> obj = args[0].As<Object>();
+  sqlite3* db = (sqlite3*)obj->GetAlignedPointerFromInternalField(0);
+  const char* errmsg = sqlite3_errmsg(db);
+  args.GetReturnValue().Set(String::NewFromOneByte(isolate, (const uint8_t*)errmsg, 
+    NewStringType::kNormal, strnlen(errmsg, 1024)).ToLocalChecked());
+}
+
 void just::sqlite::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> module = ObjectTemplate::New(isolate);
 
@@ -407,6 +446,12 @@ void just::sqlite::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, module, "autoCommit", AutoCommit);
   SET_METHOD(isolate, module, "checkpoint", CheckPoint);
   SET_METHOD(isolate, module, "enableShared", EnableShared);
+  SET_METHOD(isolate, module, "memoryUsed", MemoryUsed);
+  SET_METHOD(isolate, module, "memoryHighwater", MemoryHighwater);
+  SET_METHOD(isolate, module, "releaseDBMemory", ReleaseDBMemory);
+  SET_METHOD(isolate, module, "releaseMemory", ReleaseMemory);
+  SET_METHOD(isolate, module, "errCode", ErrCode);
+  SET_METHOD(isolate, module, "errMessage", ErrMessage);
 
   SET_METHOD(isolate, module, "initialize", Initialize);
   SET_METHOD(isolate, module, "shutdown", Shutdown);
