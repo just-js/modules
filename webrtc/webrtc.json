@@ -1,0 +1,4 @@
+{
+  "obj": ["deps/libdatachannel-0.17.8/libdatachannel-static.a", "deps/libdatachannel-0.17.8/deps/libjuice/libjuice-static.a", "deps/libdatachannel-0.17.8/deps/usrsctp/usrsctplib/libusrsctp.a"],
+  "lib": ["pthread", "ssl", "crypto"]
+}

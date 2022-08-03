@@ -1,4 +1,5 @@
 {
   "obj": [],
-  "lib": ["dl", "rt"]
+  "lib": ["dl", "rt"],
+  "staticLib": ["dl", "rt"]
 }

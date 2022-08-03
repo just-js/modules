@@ -18,6 +18,9 @@ namespace just {
 
 namespace fs {
 
+void FDataSync(const FunctionCallbackInfo<Value> &args);
+void FSync(const FunctionCallbackInfo<Value> &args);
+
 void ReadFile(const FunctionCallbackInfo<Value> &args);
 void Unlink(const FunctionCallbackInfo<Value> &args);
 void Symlink(const FunctionCallbackInfo<Value> &args);

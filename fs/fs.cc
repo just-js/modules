@@ -183,6 +183,7 @@ void just::fs::Readdir(const FunctionCallbackInfo<Value> &args) {
   String::Utf8Value path(isolate, args[0]);
   Local<Array> answer = args[1].As<Array>();
   DIR* directory = opendir(*path);
+  // todo: add skip and size params so can page through entries
   if (directory == NULL) return;
   dirent* entry = readdir(directory);
   if (entry == NULL) return;
@@ -207,10 +208,18 @@ void just::fs::Readdir(const FunctionCallbackInfo<Value> &args) {
         Integer::New(isolate, entry->d_reclen)).Check();
     answer->Set(context, i++, o).Check();
     entry = readdir(directory);
-    if (i == 1023) break;
+    //if (i == 1024) break;
   }
   closedir(directory);
   args.GetReturnValue().Set(answer);
+}
+
+void just::fs::FSync(const FunctionCallbackInfo<Value> &args) {
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), fsync(Local<Integer>::Cast(args[0])->Value())));
+}
+
+void just::fs::FDataSync(const FunctionCallbackInfo<Value> &args) {
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), fdatasync(Local<Integer>::Cast(args[0])->Value())));
 }
 
 void just::fs::Init(Isolate* isolate, Local<ObjectTemplate> target) {
@@ -232,6 +241,9 @@ void just::fs::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, fs, "mknod", just::fs::Mknod);
   SET_METHOD(isolate, fs, "mkfifo", just::fs::Mkfifo);
   SET_METHOD(isolate, fs, "realpath", just::fs::Realpath);
+
+  SET_METHOD(isolate, fs, "fdatasync", just::fs::FDataSync);
+  SET_METHOD(isolate, fs, "fsync", just::fs::FSync);
 
   SET_METHOD(isolate, fs, "chmod", just::fs::Chmod);
   SET_METHOD(isolate, fs, "chown", just::fs::Chown);

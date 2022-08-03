@@ -16,22 +16,23 @@ deps:
 deps/sqlite/build/sqlite3.o: deps ## dependencies
 	mkdir -p deps/sqlite/build
 	cd deps/sqlite/build
-#	../configure --disable-math --disable-load-extension --disable-readline --disable-tcl --with-pic
-	../configure --disable-math --disable-readline --disable-tcl --with-pic
+	../configure --disable-math --disable-readline --disable-tcl --with-pic --enable-session
 	make
 	cd ../../../
 
 library: deps/sqlite/build/.libs/libsqlite3.a ## build shared library
 	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/sqlite/build -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -g -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
-	$(CC) -g -s -shared -flto -pthread -m64 -Wl,--start-group ${MODULE}.o deps/sqlite/build/.libs/libsqlite3.a -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
+	$(CC) -g -shared -flto -pthread -m64 -Wl,--start-group ${MODULE}.o deps/sqlite/build/.libs/libsqlite3.a -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
 	objcopy --only-keep-debug ${MODULE}.so ${MODULE}.so.debug
 	strip --strip-debug --strip-unneeded ${MODULE}.so
+	objcopy --add-gnu-debuglink=${MODULE}.so.debug ${MODULE}.so
 
 vfs: deps/sqlite/build/.libs/libsqlite3.a ## build shared vfs library
 	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/sqlite/build -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -g -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}_vfs.cc
-	$(CC) -g -s -shared -flto -pthread -m64 -Wl,--start-group ${MODULE}_vfs.o deps/sqlite/build/.libs/libsqlite3.a -Wl,--end-group -Wl,-soname=${MODULE}_vfs.so -o ${MODULE}_vfs.so
+	$(CC) -g -shared -flto -pthread -m64 -Wl,--start-group ${MODULE}_vfs.o deps/sqlite/build/.libs/libsqlite3.a -Wl,--end-group -Wl,-soname=${MODULE}_vfs.so -o ${MODULE}_vfs.so
 	objcopy --only-keep-debug ${MODULE}_vfs.so ${MODULE}_vfs.so.debug
 	strip --strip-debug --strip-unneeded ${MODULE}_vfs.so
+	objcopy --add-gnu-debuglink=${MODULE}.so.debug ${MODULE}.so
 
 clean: ## tidy up
 	rm -f *.o
@@ -54,6 +55,5 @@ install: ## copy shared library to $INSTALL
 install-debug: ## copy debug symbols to $INSTALL
 	mkdir -p ${LIBS}/.debug
 	cp -f ${MODULE}.so.debug ${LIBS}/.debug/${MODULE}.so.debug
-	objcopy --add-gnu-debuglink=${LIBS}/${MODULE}.so ${LIBS}/.debug/${MODULE}.so.debug
 
 .DEFAULT_GOAL := help

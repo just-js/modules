@@ -1,0 +1,33 @@
+{
+  "obj": [
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/prototab.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/base64.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/buf.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/checksum.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/command.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/delta.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/emit.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/fileutil.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/hashtable.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/hex.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/job.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/mdfour.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/mksum.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/msg.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/netint.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/patch.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/readsums.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/rollsum.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/rabinkarp.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/scoop.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/stats.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/sumset.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/trace.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/tube.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/util.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/version.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/whole.c.o",
+    "deps/librsync-2.3.2/CMakeFiles/rsync.dir/src/blake2/blake2b-ref.c.o"    
+  ],
+  "lib": []
+}

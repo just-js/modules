@@ -1,7 +1,5 @@
 #include "sqlite_vfs.h"
 
-#include "sqlite3.h"
-
 #include <assert.h>
 #include <string.h>
 #include <sys/types.h>
@@ -24,6 +22,16 @@
 ** The maximum pathname length supported by this VFS.
 */
 #define MAXPATHNAME 512
+
+enum methodNames {
+  VFS_OPEN,
+  VFS_PATHNAME,
+  VFS_ACCESS,
+  VFS_DELETE,
+  VFS_DLOPEN,
+  VFS_DLERROR,
+  VFS_SYNC
+};
 
 struct sqlapiHandler {
 	v8::Persistent<v8::Function, v8::NonCopyablePersistentTraits<v8::Function>> callback;
@@ -64,7 +72,7 @@ static int demoDirectWrite(
   }
 
   nWrite = write(p->fd, zBuf, iAmt);
-  if( nWrite!=iAmt ){
+  if( nWrite!=(size_t)iAmt ){
     return SQLITE_IOERR_WRITE;
   }
 
@@ -291,6 +299,30 @@ static int demoDeviceCharacteristics(sqlite3_file *pFile){
   return 0;
 }
 
+static int demoShmMap (sqlite3_file*, int iPg, int pgsz, int, void volatile**) {
+  return 0;
+}
+
+static int demoShmLock (sqlite3_file*, int offset, int n, int flags) {
+  return 0;
+}
+
+static void demoShmBarrier (sqlite3_file*) {
+
+}
+
+static int demoShmUnmap (sqlite3_file*, int deleteFlag) {
+  return 0;
+}
+
+static int demoFetch (sqlite3_file*, sqlite3_int64 iOfst, int iAmt, void **pp) {
+  return 0;
+}
+
+static int demoUnfetch (sqlite3_file*, sqlite3_int64 iOfst, void *p) {
+  return 0;
+}
+
 /*
 ** Open a file handle.
 */
@@ -305,9 +337,13 @@ static int demoOpen(
     sqlapiHandler* handler = (sqlapiHandler*)pVfs->pAppData;
     v8::Isolate* isolate = handler->isolate;
     v8::Local<v8::Function> callback = v8::Local<v8::Function>::New(isolate, handler->callback);
-    v8::Local<v8::Value> args[0] = {};
+    v8::Local<v8::Value> args[3] = {
+      v8::Integer::New(isolate, methodNames::VFS_OPEN),
+      v8::String::NewFromOneByte(isolate, (const uint8_t*)zName, v8::NewStringType::kNormal, strnlen(zName, 255)).ToLocalChecked(),
+      v8::Integer::New(isolate, flags)
+    };
     v8::Local<v8::Context> context = isolate->GetCurrentContext();
-    callback->Call(context, context->Global(), 0, args).ToLocalChecked();
+    callback->Call(context, context->Global(), 3, args).ToLocalChecked();
   }
   static const sqlite3_io_methods demoio = {
     1,                            /* iVersion */
@@ -322,7 +358,13 @@ static int demoOpen(
     demoCheckReservedLock,        /* xCheckReservedLock */
     demoFileControl,              /* xFileControl */
     demoSectorSize,               /* xSectorSize */
-    demoDeviceCharacteristics     /* xDeviceCharacteristics */
+    demoDeviceCharacteristics,     /* xDeviceCharacteristics */
+    demoShmMap,               /* xShmMap */
+    demoShmLock,               /* xShmLock */
+    demoShmBarrier,               /* xShmBarrier */
+    demoShmUnmap,               /* xShmUnmap */
+    demoFetch,               /* xFetch */
+    demoUnfetch               /* xUnfetch */
   };
 
   DemoFile *p = (DemoFile*)pFile; /* Populate this structure */
@@ -372,9 +414,13 @@ static int demoDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
     sqlapiHandler* handler = (sqlapiHandler*)pVfs->pAppData;
     v8::Isolate* isolate = handler->isolate;
     v8::Local<v8::Function> callback = v8::Local<v8::Function>::New(isolate, handler->callback);
-    v8::Local<v8::Value> args[0] = {};
+    v8::Local<v8::Value> args[3] = {
+      v8::Integer::New(isolate, methodNames::VFS_DELETE),
+      v8::String::NewFromOneByte(isolate, (const uint8_t*)zPath, v8::NewStringType::kNormal, strnlen(zPath, 255)).ToLocalChecked(),
+      v8::Integer::New(isolate, dirSync)
+    };
     v8::Local<v8::Context> context = isolate->GetCurrentContext();
-    callback->Call(context, context->Global(), 0, args).ToLocalChecked();
+    callback->Call(context, context->Global(), 3, args).ToLocalChecked();
   }
 
   rc = unlink(zPath);
@@ -428,9 +474,13 @@ static int demoAccess(
     sqlapiHandler* handler = (sqlapiHandler*)pVfs->pAppData;
     v8::Isolate* isolate = handler->isolate;
     v8::Local<v8::Function> callback = v8::Local<v8::Function>::New(isolate, handler->callback);
-    v8::Local<v8::Value> args[0] = {};
+    v8::Local<v8::Value> args[3] = {
+      v8::Integer::New(isolate, methodNames::VFS_ACCESS),
+      v8::String::NewFromOneByte(isolate, (const uint8_t*)zPath, v8::NewStringType::kNormal, strnlen(zPath, 255)).ToLocalChecked(),
+      v8::Integer::New(isolate, flags)
+    };
     v8::Local<v8::Context> context = isolate->GetCurrentContext();
-    callback->Call(context, context->Global(), 0, args).ToLocalChecked();
+    callback->Call(context, context->Global(), 3, args).ToLocalChecked();
   }
   int rc;                         /* access() return code */
   int eAccess = F_OK;             /* Second argument to access() */
@@ -470,9 +520,12 @@ static int demoFullPathname(
     sqlapiHandler* handler = (sqlapiHandler*)pVfs->pAppData;
     v8::Isolate* isolate = handler->isolate;
     v8::Local<v8::Function> callback = v8::Local<v8::Function>::New(isolate, handler->callback);
-    v8::Local<v8::Value> args[0] = {};
+    v8::Local<v8::Value> args[2] = {
+      v8::Integer::New(isolate, methodNames::VFS_PATHNAME),
+      v8::String::NewFromOneByte(isolate, (const uint8_t*)zPath, v8::NewStringType::kNormal, strnlen(zPath, 255)).ToLocalChecked()
+    };
     v8::Local<v8::Context> context = isolate->GetCurrentContext();
-    callback->Call(context, context->Global(), 0, args).ToLocalChecked();
+    callback->Call(context, context->Global(), 2, args).ToLocalChecked();
   }
   char zDir[MAXPATHNAME+1];
   if( zPath[0]=='/' ){
@@ -486,36 +539,6 @@ static int demoFullPathname(
   zPathOut[nPathOut-1] = '\0';
 
   return SQLITE_OK;
-}
-
-/*
-** The following four VFS methods:
-**
-**   xDlOpen
-**   xDlError
-**   xDlSym
-**   xDlClose
-**
-** are supposed to implement the functionality needed by SQLite to load
-** extensions compiled as shared objects. This simple VFS does not support
-** this functionality, so the following functions are no-ops.
-*/
-static void *demoDlOpen(sqlite3_vfs *pVfs, const char *zPath){
-  //fprintf(stderr, "vfs_dlopen\n");
-  return 0;
-}
-static void demoDlError(sqlite3_vfs *pVfs, int nByte, char *zErrMsg){
-  //fprintf(stderr, "vfs_dlerror\n");
-  sqlite3_snprintf(nByte, zErrMsg, "Loadable extensions are not supported");
-  zErrMsg[nByte-1] = '\0';
-}
-static void (*demoDlSym(sqlite3_vfs *pVfs, void *pH, const char *z))(void){
-  //fprintf(stderr, "vfs_dlsym\n");
-  return 0;
-}
-static void demoDlClose(sqlite3_vfs *pVfs, void *pHandle){
-  //fprintf(stderr, "vfs_close\n");
-  return;
 }
 
 /*
@@ -562,23 +585,18 @@ static int demoCurrentTime(sqlite3_vfs *pVfs, double *pTime){
 **
 **   sqlite3_vfs_register(sqlite3_demovfs(), 0);
 */
-static sqlite3_vfs *sqlite3_demovfs(char* name){
-  //fprintf(stderr, "register_vfs\n");
+static sqlite3_vfs *sqlite3_demovfs(const char* name){
   sqlite3_vfs* vfs = (sqlite3_vfs*)calloc(1, sizeof(sqlite3_vfs));
   vfs->iVersion = 1;
   vfs->szOsFile = sizeof(DemoFile);
   vfs->mxPathname = MAXPATHNAME;
   vfs->pNext = 0;
   vfs->zName = name;
-  vfs->pAppData = 0;
+  vfs->pAppData = 0; // pointer to app data
   vfs->xOpen = demoOpen;
   vfs->xDelete = demoDelete;
   vfs->xAccess = demoAccess;
   vfs->xFullPathname = demoFullPathname;
-  vfs->xDlOpen = demoDlOpen;
-  vfs->xDlError = demoDlError;
-  vfs->xDlSym = demoDlSym;
-  vfs->xDlClose = demoDlClose;
   vfs->xRandomness = demoRandomness;
   vfs->xSleep = demoSleep;
   vfs->xCurrentTime = demoCurrentTime;
@@ -613,7 +631,6 @@ void just::sqlite_vfs::Create(const FunctionCallbackInfo<Value> &args) {
 
 void just::sqlite_vfs::LoadExtension(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
-  Local<Context> context = isolate->GetCurrentContext();
   HandleScope handleScope(isolate);
   Local<Object> obj = args[0].As<Object>();
   sqlite3* db = (sqlite3*)obj->GetAlignedPointerFromInternalField(0);
@@ -632,5 +649,40 @@ void just::sqlite_vfs::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, module, "create", Create);
   SET_METHOD(isolate, module, "loadExtension", LoadExtension);
 
+  SET_VALUE(isolate, module, "VFS_OPEN", Integer::New(isolate, VFS_OPEN));
+  SET_VALUE(isolate, module, "VFS_PATHNAME", Integer::New(isolate, VFS_PATHNAME));
+  SET_VALUE(isolate, module, "VFS_ACCESS", Integer::New(isolate, VFS_ACCESS));
+  SET_VALUE(isolate, module, "VFS_DELETE", Integer::New(isolate, VFS_DELETE));
+/*
+SQLITE_SYNC_NORMAL
+SQLITE_SYNC_FULL
+SQLITE_SYNC_DATAONLY
+
+SQLITE_LOCK_NONE
+SQLITE_LOCK_SHARED
+SQLITE_LOCK_RESERVED
+SQLITE_LOCK_PENDING
+SQLITE_LOCK_EXCLUSIVE
+
+SQLITE_IOCAP_ATOMIC
+SQLITE_IOCAP_ATOMIC512
+SQLITE_IOCAP_ATOMIC1K
+SQLITE_IOCAP_ATOMIC2K
+SQLITE_IOCAP_ATOMIC4K
+SQLITE_IOCAP_ATOMIC8K
+SQLITE_IOCAP_ATOMIC16K
+SQLITE_IOCAP_ATOMIC32K
+SQLITE_IOCAP_ATOMIC64K
+SQLITE_IOCAP_SAFE_APPEND
+SQLITE_IOCAP_SEQUENTIAL
+SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN
+SQLITE_IOCAP_POWERSAFE_OVERWRITE
+SQLITE_IOCAP_IMMUTABLE
+SQLITE_IOCAP_BATCH_ATOMIC
+
+SQLITE_IOERR_SHORT_READ
+
+SQLITE_NOTFOUND
+*/
   SET_MODULE(isolate, target, "sqlite_vfs", module);
 }

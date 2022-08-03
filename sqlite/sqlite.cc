@@ -1,21 +1,22 @@
 #include "sqlite.h"
 
-void just::sqlite::Error(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Object> obj = args[0].As<Object>();
-  sqlite3* db = (sqlite3*)obj->GetAlignedPointerFromInternalField(0);
-  const char* errmsg = sqlite3_errmsg(db);
-  args.GetReturnValue().Set(String::NewFromOneByte(isolate, (const uint8_t*)errmsg, 
-    NewStringType::kNormal, strnlen(errmsg, 1024)).ToLocalChecked());
-}
-
 void just::sqlite::Version(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
   const char* version = sqlite3_libversion();
   args.GetReturnValue().Set(String::NewFromOneByte(isolate, (const uint8_t*)version, 
     NewStringType::kNormal, strnlen(version, 1024)).ToLocalChecked());
+}
+
+void just::sqlite::Filename(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Object> obj = args[0].As<Object>();
+  sqlite3* db = (sqlite3*)obj->GetAlignedPointerFromInternalField(0);
+  String::Utf8Value dbname(isolate, args[1]);
+  const char* filename = sqlite3_db_filename(db, *dbname);
+  args.GetReturnValue().Set(String::NewFromOneByte(isolate, (const uint8_t*)filename, 
+    NewStringType::kNormal, strnlen(filename, 1024)).ToLocalChecked());
 }
 
 void just::sqlite::Open(const FunctionCallbackInfo<Value> &args) {
@@ -56,7 +57,7 @@ void just::sqlite::Prepare(const FunctionCallbackInfo<Value> &args) {
   String::Utf8Value sql(isolate, args[1]);
   int status = sqlite3_prepare_v2(db, *sql, -1, &res, 0);
   if (status != SQLITE_OK) {
-    fprintf(stderr, "%i\n", status);
+    //fprintf(stderr, "%i\n", status);
     // todo: set error
     return;
   }
@@ -68,12 +69,60 @@ void just::sqlite::Prepare(const FunctionCallbackInfo<Value> &args) {
 }
 
 int callback(void *NotUsed, int argc, char **argv, char **azColName) {
-  NotUsed = 0;
-  for (int i = 0; i < argc; i++) {
+  //NotUsed = 0;
+  //for (int i = 0; i < argc; i++) {
     //printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-  }
+  //}
   //printf("\n");
   return 0;
+}
+
+void just::sqlite::Deserialize(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Object> obj = args[0].As<Object>();
+  sqlite3* db = (sqlite3*)obj->GetAlignedPointerFromInternalField(0);
+  Local<ArrayBuffer> value = args[1].As<ArrayBuffer>();
+  std::shared_ptr<BackingStore> backing = value->GetBackingStore();
+  unsigned char* data = (unsigned char*)backing->Data();
+  int flags = Local<Integer>::Cast(args[2])->Value();
+  String::Utf8Value name(isolate, args[3]);
+  size_t size = backing->ByteLength();
+  if (args.Length() > 4) {
+    size = Local<Integer>::Cast(args[4])->Value();
+  }
+  int status = sqlite3_deserialize(db, *name, data, size, backing->ByteLength(), flags);
+  args.GetReturnValue().Set(Integer::New(isolate, status));
+}
+
+void just::sqlite::Serialize(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Object> obj = args[0].As<Object>();
+  sqlite3* db = (sqlite3*)obj->GetAlignedPointerFromInternalField(0);
+  String::Utf8Value name(isolate, args[1]);
+  int flags = 0;
+  if (args.Length() > 2) {
+    flags = Local<Integer>::Cast(args[2])->Value();
+  }
+  sqlite3_int64 size;
+  unsigned char* data = sqlite3_serialize(db, *name, &size, flags);
+  if (data == NULL) {
+    return;
+  }
+  if ((flags | SQLITE_SERIALIZE_NOCOPY) == SQLITE_SERIALIZE_NOCOPY) {
+    std::unique_ptr<BackingStore> backing = ArrayBuffer::NewBackingStore(data, size, 
+        [](void*, size_t, void*){}, nullptr);
+    Local<ArrayBuffer> ab =
+        ArrayBuffer::New(args.GetIsolate(), std::move(backing));
+    args.GetReturnValue().Set(ab);
+  } else {
+    std::unique_ptr<BackingStore> backing = ArrayBuffer::NewBackingStore(data, size, 
+        just::FreeMemory, nullptr);
+    Local<ArrayBuffer> ab =
+        ArrayBuffer::New(args.GetIsolate(), std::move(backing));
+    args.GetReturnValue().Set(ab);    
+  }
 }
 
 void just::sqlite::Exec(const FunctionCallbackInfo<Value> &args) {
@@ -91,12 +140,8 @@ void just::sqlite::Exec(const FunctionCallbackInfo<Value> &args) {
 }
 
 void just::sqlite::Step(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Object> obj = args[0].As<Object>();
-  sqlite3_stmt* stmt = (sqlite3_stmt*)obj->GetAlignedPointerFromInternalField(0);
-  int status = sqlite3_step(stmt);
-  args.GetReturnValue().Set(Integer::New(isolate, status));
+  sqlite3_stmt* stmt = (sqlite3_stmt*)args[0].As<Object>()->GetAlignedPointerFromInternalField(0);
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), sqlite3_step(stmt)));
 }
 
 void just::sqlite::ParamIndex(const FunctionCallbackInfo<Value> &args) {
@@ -207,13 +252,8 @@ void just::sqlite::ColumnBytes(const FunctionCallbackInfo<Value> &args) {
 }
 
 void just::sqlite::ColumnInt(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Object> obj = args[0].As<Object>();
-  sqlite3_stmt* stmt = (sqlite3_stmt*)obj->GetAlignedPointerFromInternalField(0);
-  int column = Local<Integer>::Cast(args[1])->Value();
-  int value = sqlite3_column_int(stmt, column);
-  args.GetReturnValue().Set(Integer::New(isolate, value));
+  sqlite3_stmt* stmt = (sqlite3_stmt*)args[0].As<Object>()->GetAlignedPointerFromInternalField(0);
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), sqlite3_column_int(stmt, Local<Integer>::Cast(args[1])->Value())));
 }
 
 void just::sqlite::ColumnInt64(const FunctionCallbackInfo<Value> &args) {
@@ -266,28 +306,20 @@ void just::sqlite::ColumnBlob(const FunctionCallbackInfo<Value> &args) {
   void* data = calloc(1, len);
   memcpy(data, rodata, len);
   std::unique_ptr<BackingStore> backing = ArrayBuffer::NewBackingStore(data, len, 
-      [](void*, size_t, void*){}, nullptr);
+      just::FreeMemory, nullptr);
   Local<ArrayBuffer> ab =
       ArrayBuffer::New(args.GetIsolate(), std::move(backing));
   args.GetReturnValue().Set(ab);
 }
 
 void just::sqlite::Finalize(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Object> obj = args[0].As<Object>();
-  sqlite3_stmt* stmt = (sqlite3_stmt*)obj->GetAlignedPointerFromInternalField(0);
-  int status = sqlite3_finalize(stmt);
-  args.GetReturnValue().Set(Integer::New(isolate, status));
+  sqlite3_stmt* stmt = (sqlite3_stmt*)args[0].As<Object>()->GetAlignedPointerFromInternalField(0);
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), sqlite3_finalize(stmt)));
 }
 
 void just::sqlite::Reset(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Object> obj = args[0].As<Object>();
-  sqlite3_stmt* stmt = (sqlite3_stmt*)obj->GetAlignedPointerFromInternalField(0);
-  int status = sqlite3_reset(stmt);
-  args.GetReturnValue().Set(Integer::New(isolate, status));
+  sqlite3_stmt* stmt = (sqlite3_stmt*)args[0].As<Object>()->GetAlignedPointerFromInternalField(0);
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), sqlite3_reset(stmt)));
 }
 
 void just::sqlite::Initialize(const FunctionCallbackInfo<Value> &args) {
@@ -340,7 +372,34 @@ void just::sqlite::CheckPoint(const FunctionCallbackInfo<Value> &args) {
   result->Set(context, 2, Integer::New(isolate, rc)).Check();
   args.GetReturnValue().Set(result);
 }
+/*
+void just::sqlite::CheckPoint(const FunctionCallbackInfo<Value> &args) {
+  int logSize = 0;
+  int framesCheckPointed = 0;
+  sqlite3* db = (sqlite3*)args[0].As<Object>()->GetAlignedPointerFromInternalField(0);
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), sqlite3_wal_checkpoint_v2(db, NULL, SQLITE_CHECKPOINT_FULL, &logSize, &framesCheckPointed)));
+}
+*/
+/*
+void just::sqlite::WalCheckpoint(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Object> obj = args[0].As<Object>();
+  sqlite3* db = (sqlite3*)obj->GetAlignedPointerFromInternalField(0);
+  String::Utf8Value name(isolate, args[1]);
+  //int iDb = sqlite3FindDbName(db, *name);
+  int iDb = 0;
+  Pager* pager = db->aDb[iDb].pBt->pBt->pPager;
+  int frame = Local<Integer>::Cast(args[2])->Value();
+  int page = Local<Integer>::Cast(args[3])->Value();
+  int rc = walIndexAppend(pager->pWal, frame, page);
 
+  //int pnLog;
+  //int pnCkpt;
+  //int rc = sqlite3PagerCheckpoint(pager, db, SQLITE_CHECKPOINT_FULL, &pnLong, &pnCkpt);
+  //args.GetReturnValue().Set(Integer::New(args.GetIsolate(), rc));
+}
+*/
 void just::sqlite::RegisterVFS(const FunctionCallbackInfo<Value> &args) {
   Local<Object> obj = args[0].As<Object>();
   sqlite3_vfs* vfs = (sqlite3_vfs*)obj->GetAlignedPointerFromInternalField(0);
@@ -414,6 +473,30 @@ void just::sqlite::ErrCode(const FunctionCallbackInfo<Value> &args) {
   HandleScope handleScope(isolate);
   Local<Object> obj = args[0].As<Object>();
   sqlite3* db = (sqlite3*)obj->GetAlignedPointerFromInternalField(0);
+  if (db == NULL) {
+    return;
+  }
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), sqlite3_errcode(db)));
+}
+
+void just::sqlite::Status(const FunctionCallbackInfo<Value> &args) {
+  //Isolate *isolate = args.GetIsolate();
+  //HandleScope handleScope(isolate);
+  //int op = Local<Integer>::Cast(args[0])->Value();
+  //int curr = 0;
+  //int high = 0;
+  //int reset = 0;
+  //if (args.Length() > 1) {
+//    reset = Local<Integer>::Cast(args[1])->Value();
+  //}
+  //args.GetReturnValue().Set(Integer::New(args.GetIsolate(), rc));
+}
+
+void just::sqlite::Status64(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Object> obj = args[0].As<Object>();
+  sqlite3* db = (sqlite3*)obj->GetAlignedPointerFromInternalField(0);
   args.GetReturnValue().Set(Integer::New(args.GetIsolate(), sqlite3_errcode(db)));
 }
 
@@ -422,9 +505,52 @@ void just::sqlite::ErrMessage(const FunctionCallbackInfo<Value> &args) {
   HandleScope handleScope(isolate);
   Local<Object> obj = args[0].As<Object>();
   sqlite3* db = (sqlite3*)obj->GetAlignedPointerFromInternalField(0);
+  if (db == NULL) {
+    return;
+  }
   const char* errmsg = sqlite3_errmsg(db);
   args.GetReturnValue().Set(String::NewFromOneByte(isolate, (const uint8_t*)errmsg, 
     NewStringType::kNormal, strnlen(errmsg, 1024)).ToLocalChecked());
+}
+
+void just::sqlite::Changes(const FunctionCallbackInfo<Value> &args) {
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), sqlite3_changes((sqlite3*)args[0].As<Object>()->GetAlignedPointerFromInternalField(0))));
+}
+
+int just::sqlite::WalHandler(void* appinfo, sqlite3* db, const char* name, int pages) {
+  just::sqlite::walHandler* handler = (just::sqlite::walHandler*)appinfo;
+  Isolate* isolate = handler->isolate;
+  Local<Function> callback = Local<Function>::New(isolate, handler->callback);
+  Local<Context> context = isolate->GetCurrentContext();
+  Local<Value> args[1] = {
+    Integer::New(isolate, pages)
+  };
+  callback->Call(context, context->Global(), 1, args).ToLocalChecked();
+  return SQLITE_OK;
+}
+
+void just::sqlite::WalHook(const FunctionCallbackInfo<Value> &args) {
+  Isolate *isolate = args.GetIsolate();
+  Local<Object> obj = args[0].As<Object>();
+  sqlite3* db = (sqlite3*)obj->GetAlignedPointerFromInternalField(0);
+  just::sqlite::walHandler* handler = new just::sqlite::walHandler();
+  if (args.Length() == 1) {
+    sqlite3_wal_hook(db, NULL, NULL);
+    return;
+  }
+  handler->callback.Reset(isolate, args[1].As<Function>());
+  handler->isolate = isolate;
+  sqlite3_wal_hook(db, &WalHandler, handler);
+}
+
+void just::sqlite::Lock(const FunctionCallbackInfo<Value> &args) {
+  sqlite3* db = (sqlite3*)args[0].As<Object>()->GetAlignedPointerFromInternalField(0);
+  sqlite3_mutex_enter(db->mutex);
+}
+
+void just::sqlite::Unlock(const FunctionCallbackInfo<Value> &args) {
+  sqlite3* db = (sqlite3*)args[0].As<Object>()->GetAlignedPointerFromInternalField(0);
+  sqlite3_mutex_leave(db->mutex);
 }
 
 void just::sqlite::Init(Isolate* isolate, Local<ObjectTemplate> target) {
@@ -432,13 +558,24 @@ void just::sqlite::Init(Isolate* isolate, Local<ObjectTemplate> target) {
 
   SET_METHOD(isolate, module, "version", Version);
 
+  SET_METHOD(isolate, module, "lock", Lock);
+  SET_METHOD(isolate, module, "unlock", Unlock);
+
+  SET_METHOD(isolate, module, "walHook", WalHook);
   SET_METHOD(isolate, module, "open", Open);
   SET_METHOD(isolate, module, "prepare", Prepare);
   SET_METHOD(isolate, module, "step", Step);
   SET_METHOD(isolate, module, "exec", Exec);
-  SET_METHOD(isolate, module, "error", Error);
   SET_METHOD(isolate, module, "finalize", Finalize);
   SET_METHOD(isolate, module, "reset", Reset);
+  SET_METHOD(isolate, module, "filename", Filename);
+  SET_METHOD(isolate, module, "changes", Changes);
+
+  SET_METHOD(isolate, module, "status", Status);
+  SET_METHOD(isolate, module, "status64", Status64);
+
+  SET_METHOD(isolate, module, "deserialize", Deserialize);
+  SET_METHOD(isolate, module, "serialize", Serialize);
 
   SET_METHOD(isolate, module, "lastId", LastId);
   SET_METHOD(isolate, module, "threadSafe", ThreadSafe);
@@ -478,6 +615,8 @@ void just::sqlite::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, module, "registerVFS", RegisterVFS);
   SET_METHOD(isolate, module, "unregisterVFS", UnregisterVFS);
   SET_METHOD(isolate, module, "config", Config);
+
+  SET_VALUE(isolate, module, "SQLITE_ROW", Integer::New(isolate, SQLITE_ROW));
 
   SET_MODULE(isolate, target, "sqlite", module);
 }

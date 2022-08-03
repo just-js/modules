@@ -391,11 +391,19 @@ void just::sys::HeapSpaceUsage(const FunctionCallbackInfo<Value> &args) {
 }
 
 void just::sys::Memcpy(const FunctionCallbackInfo<Value> &args) {
-  std::shared_ptr<BackingStore> bdest = 
-    args[0].As<ArrayBuffer>()->GetBackingStore();
+  std::shared_ptr<BackingStore> bdest;
+  std::shared_ptr<BackingStore> bsource;
+  if (args[0]->IsArrayBuffer()) {
+    bdest = args[0].As<ArrayBuffer>()->GetBackingStore();
+  } else {
+    bdest = args[0].As<SharedArrayBuffer>()->GetBackingStore();
+  }
   char *dest = static_cast<char *>(bdest->Data());
-  std::shared_ptr<BackingStore> bsource = 
-    args[1].As<ArrayBuffer>()->GetBackingStore();
+  if (args[1]->IsArrayBuffer()) {
+    bsource = args[1].As<ArrayBuffer>()->GetBackingStore();
+  } else {
+    bsource = args[1].As<SharedArrayBuffer>()->GetBackingStore();
+  }
   char *source = static_cast<char *>(bsource->Data());
   int slen = bsource->ByteLength();
   int argc = args.Length();
@@ -483,6 +491,13 @@ void just::sys::ReadString(const FunctionCallbackInfo<Value> &args) {
 
 void just::sys::GetAddress(const FunctionCallbackInfo<Value> &args) {
   Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
+  std::shared_ptr<BackingStore> backing = ab->GetBackingStore();
+  char *data = static_cast<char *>(backing->Data());
+  args.GetReturnValue().Set(BigInt::New(args.GetIsolate(), (uint64_t)data));
+}
+
+void just::sys::GetAddressShared(const FunctionCallbackInfo<Value> &args) {
+  Local<SharedArrayBuffer> ab = args[0].As<SharedArrayBuffer>();
   std::shared_ptr<BackingStore> backing = ab->GetBackingStore();
   char *data = static_cast<char *>(backing->Data());
   args.GetReturnValue().Set(BigInt::New(args.GetIsolate(), (uint64_t)data));
@@ -587,7 +602,7 @@ void just::sys::WritePointer(const FunctionCallbackInfo<Value> &args) {
   uint8_t* dest = static_cast<uint8_t*>(abdest->GetBackingStore()->Data());
   Local<ArrayBuffer> absrc = args[1].As<ArrayBuffer>();
   uint8_t* src = static_cast<uint8_t*>(absrc->GetBackingStore()->Data());
-  int off = Local<Integer>::Cast(args[1])->Value();
+  int off = Local<Integer>::Cast(args[2])->Value();
   uint8_t* ptr = dest + off;
   *reinterpret_cast<void **>(ptr) = src;
 }
@@ -633,6 +648,8 @@ void just::sys::MMap(const FunctionCallbackInfo<Value> &args) {
   if (argc > 4) offset = Local<Integer>::Cast(args[4])->Value();
   void* data = mmap(0, len, prot, flags, fd, offset);
   if (data == MAP_FAILED) return;
+  //fprintf(stderr, "mem %lu\n", (uint64_t)data);
+
   if ((flags & MAP_SHARED) > 0) {
     std::unique_ptr<BackingStore> backing = SharedArrayBuffer::NewBackingStore(
         data, len, [](void*, size_t, void*){}, nullptr);
@@ -645,6 +662,34 @@ void just::sys::MMap(const FunctionCallbackInfo<Value> &args) {
   Local<ArrayBuffer> ab =
       ArrayBuffer::New(args.GetIsolate(), std::move(backing));
   args.GetReturnValue().Set(ab);
+}
+
+void just::sys::MRemap(const FunctionCallbackInfo<Value> &args) {
+  Local<SharedArrayBuffer> ab = args[0].As<SharedArrayBuffer>();
+  size_t oldsize = Local<Integer>::Cast(args[1])->Value();
+  size_t newsize = Local<Integer>::Cast(args[2])->Value();
+  int flags = MREMAP_MAYMOVE;
+  if (args.Length() > 3) {
+    flags = Local<Integer>::Cast(args[3])->Value();
+  }
+  void* data = mremap(ab->GetBackingStore()->Data(), oldsize, newsize, flags);
+  if (data == MAP_FAILED) return;
+  std::unique_ptr<BackingStore> backing = SharedArrayBuffer::NewBackingStore(
+      data, newsize, [](void*, size_t, void*){}, nullptr);
+  args.GetReturnValue().Set(SharedArrayBuffer::New(args.GetIsolate(), 
+    std::move(backing)));
+}
+
+void just::sys::MSync(const FunctionCallbackInfo<Value> &args) {
+  Local<SharedArrayBuffer> ab = args[0].As<SharedArrayBuffer>();
+  int flags = MS_SYNC;
+  if (args.Length() > 2) {
+    flags = Local<Integer>::Cast(args[2])->Value();
+  }
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), 
+    msync(ab->GetBackingStore()->Data(), 
+    Local<Integer>::Cast(args[1])->Value(),
+    flags)));
 }
 
 void just::sys::MUnmap(const FunctionCallbackInfo<Value> &args) {
@@ -779,6 +824,10 @@ void just::sys::GetTerminalFlags(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(args.GetIsolate(), orig.c_lflag));
 }
 
+void just::sys::IsaTTY(const FunctionCallbackInfo<Value> &args) {
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), isatty(Local<Integer>::Cast(args[0])->Value())));
+}
+
 void just::sys::MemFdCreate(const FunctionCallbackInfo<Value> &args) {
   Isolate* isolate = args.GetIsolate();
   v8::String::Utf8Value fname(isolate, args[0]);
@@ -830,6 +879,7 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, sys, "writeString", WriteString);
   SET_METHOD(isolate, sys, "writeCString", WriteCString);  
   SET_METHOD(isolate, sys, "getAddress", GetAddress);
+  SET_METHOD(isolate, sys, "getAddressShared", GetAddressShared);
   SET_METHOD(isolate, sys, "fcntl", Fcntl);
   SET_METHOD(isolate, sys, "memcpy", Memcpy);
   SET_METHOD(isolate, sys, "sleep", Sleep);
@@ -873,10 +923,13 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, sys, "nanosleep", NanoSleep);
   SET_METHOD(isolate, sys, "mmap", MMap);
   SET_METHOD(isolate, sys, "munmap", MUnmap);
+  SET_METHOD(isolate, sys, "mremap", MRemap);
+  SET_METHOD(isolate, sys, "msync", MSync);
   SET_METHOD(isolate, sys, "reboot", Reboot);
   SET_METHOD(isolate, sys, "getenv", Getenv);
   SET_METHOD(isolate, sys, "setenv", Setenv);
   SET_METHOD(isolate, sys, "unsetenv", Unsetenv);
+  SET_METHOD(isolate, sys, "isatty", IsaTTY);
 #ifndef STATIC
   SET_METHOD(isolate, sys, "dlopen", DLOpen);
   SET_METHOD(isolate, sys, "dlsym", DLSym);
@@ -925,6 +978,11 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, sys, "ENOMEM", Integer::New(isolate, ENOMEM));
   SET_VALUE(isolate, sys, "EINVAL", Integer::New(isolate, EINVAL));
   SET_VALUE(isolate, sys, "EFAULT", Integer::New(isolate, EFAULT));
+
+  SET_VALUE(isolate, sys, "MS_ASYNC", Integer::New(isolate, MS_ASYNC));
+  SET_VALUE(isolate, sys, "MS_SYNC", Integer::New(isolate, MS_SYNC));
+  SET_VALUE(isolate, sys, "MS_INVALIDATE", Integer::New(isolate, MS_INVALIDATE));
+
 
 #ifdef __BYTE_ORDER
   // These don't work on alpine. will have to investigate why not

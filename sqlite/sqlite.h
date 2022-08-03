@@ -3,17 +3,32 @@
 
 #include "just.h"
 #include <sqlite3.h>
+#include "deps/sqlite/src/sqliteInt.h"
+#include "deps/sqlite/src/wal.h"
 
 namespace just {
 // https://zetcode.com/db/sqlitec/
 // https://github.com/sql-js/sql.js/blob/master/src/exported_functions.json
 namespace sqlite {
 
+struct walHandler {
+	v8::Persistent<Function, v8::NonCopyablePersistentTraits<Function>> callback;
+	Isolate* isolate;
+	int empty;
+};
+
+int WalHandler(void* appinfo, sqlite3* db, const char* name, int pages);
+
+void Lock(const FunctionCallbackInfo<Value> &args);
+void Unlock(const FunctionCallbackInfo<Value> &args);
+void Status(const FunctionCallbackInfo<Value> &args);
+void Status64(const FunctionCallbackInfo<Value> &args);
+void WalHook(const FunctionCallbackInfo<Value> &args);
 void Version(const FunctionCallbackInfo<Value> &args);
 void Open(const FunctionCallbackInfo<Value> &args);
 void Prepare(const FunctionCallbackInfo<Value> &args);
-void Error(const FunctionCallbackInfo<Value> &args);
 void Step(const FunctionCallbackInfo<Value> &args);
+void Changes(const FunctionCallbackInfo<Value> &args);
 void ColumnText(const FunctionCallbackInfo<Value> &args);
 void ColumnInt(const FunctionCallbackInfo<Value> &args);
 void ColumnInt64(const FunctionCallbackInfo<Value> &args);
@@ -41,6 +56,9 @@ void ReleaseDBMemory(const FunctionCallbackInfo<Value> &args);
 void ReleaseMemory(const FunctionCallbackInfo<Value> &args);
 void ErrCode(const FunctionCallbackInfo<Value> &args);
 void ErrMessage(const FunctionCallbackInfo<Value> &args);
+void Serialize(const FunctionCallbackInfo<Value> &args);
+void Deserialize(const FunctionCallbackInfo<Value> &args);
+void Filename(const FunctionCallbackInfo<Value> &args);
 
 void BindInt(const FunctionCallbackInfo<Value> &args);
 void BindInt64(const FunctionCallbackInfo<Value> &args);
