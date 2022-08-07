@@ -1,10 +1,7 @@
-#include "zlib.h"
+#include "lz4.h"
 
-void just::zlib::FreeMemory(void* buf, size_t length, void* data) {
-  //fprintf(stderr, "free: %lu\n", length);
-}
-
-void just::zlib::Crc32(const FunctionCallbackInfo<Value> &args) {
+void just::lz4::CompressBound(const FunctionCallbackInfo<Value> &args) {
+/*
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();
@@ -20,10 +17,20 @@ void just::zlib::Crc32(const FunctionCallbackInfo<Value> &args) {
   }
   const uint8_t* source = (const uint8_t *)backing->Data() + off;
   args.GetReturnValue().Set(BigInt::New(isolate, crc32(crc, source, len)));
- 
+  // LZ4_compressBound 
+*/
 }
 
-void just::zlib::WriteDeflate(const FunctionCallbackInfo<Value> &args) {
+void just::lz4::Compress(const FunctionCallbackInfo<Value> &args) {
+  // LZ4_compress_default
+  Isolate *isolate = args.GetIsolate();
+  HandleScope handleScope(isolate);
+  Local<Context> context = isolate->GetCurrentContext();
+  Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
+  const int max_dst_size = LZ4_compressBound(ab->ByteLength());
+  Local<ArrayBuffer> dest = ArrayBuffer::New(isolate, max_dst_size);
+
+/*
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();
@@ -51,9 +58,12 @@ void just::zlib::WriteDeflate(const FunctionCallbackInfo<Value> &args) {
   stream->next_out = next_out;
   stream->avail_out = avail_out;
   args.GetReturnValue().Set(Integer::New(isolate, bytes));
+*/
 }
 
-void just::zlib::WriteInflate(const FunctionCallbackInfo<Value> &args) {
+void just::lz4::Decompress(const FunctionCallbackInfo<Value> &args) {
+  //LZ4_decompress_safe
+/*
   Isolate *isolate = args.GetIsolate();
   HandleScope handleScope(isolate);
   Local<Context> context = isolate->GetCurrentContext();
@@ -82,109 +92,15 @@ void just::zlib::WriteInflate(const FunctionCallbackInfo<Value> &args) {
   state->Set(context, 0, Integer::New(isolate, bytesread)).Check();
   state->Set(context, 1, Integer::New(isolate, byteswritten)).Check();
   args.GetReturnValue().Set(Integer::New(isolate, err));
+*/
 }
 
-void just::zlib::EndDeflate(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
-  z_stream* stream = (z_stream*)ab->GetAlignedPointerFromInternalField(1);
-  int r = deflateEnd(stream);
-  if (r < 0) {
-    args.GetReturnValue().Set(Integer::New(isolate, 0));
-    return;
-  }
-  args.GetReturnValue().Set(Integer::New(isolate, stream->adler));
-}
-
-void just::zlib::EndInflate(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<ArrayBuffer> ab = args[0].As<ArrayBuffer>();
-  z_stream* stream = (z_stream*)ab->GetAlignedPointerFromInternalField(1);
-  int r = inflateEnd(stream);
-  if (r < 0) {
-    args.GetReturnValue().Set(Integer::New(isolate, 0));
-    return;
-  }
-  args.GetReturnValue().Set(Integer::New(isolate, stream->adler));
-}
-
-void just::zlib::CreateDeflate(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-  z_stream* stream = (z_stream*)calloc(1, sizeof(z_stream));
-  int argc = args.Length();
-  unsigned int compression = Z_DEFAULT_COMPRESSION;
-  int windowbits = Z_DEFAULT_WINDOW_BITS;
-  Local<ArrayBuffer> inab = args[0].As<ArrayBuffer>();
-  std::shared_ptr<BackingStore> in = inab->GetBackingStore();
-  int outlen = 4096;
-  if (argc > 1) {
-    outlen = args[1]->Uint32Value(context).ToChecked();
-  }
-  void* chunk = calloc(1, outlen);
-  // TODO: pass stream as deleter_data so we can free it
-  std::unique_ptr<BackingStore> out =
-      ArrayBuffer::NewBackingStore(chunk, outlen, FreeMemory, nullptr);
-  Local<ArrayBuffer> outab = ArrayBuffer::New(isolate, std::move(out));
-  if (argc > 2) compression = args[2]->Uint32Value(context).ToChecked();
-  if (argc > 3) windowbits = args[3]->Int32Value(context).ToChecked();
-  unsigned int err = deflateInit2(stream, compression, Z_DEFLATED, windowbits, 
-    Z_DEFAULT_MEMLEVEL, Z_DEFAULT_STRATEGY);
-  if (err != Z_OK) {
-    args.GetReturnValue().Set(Integer::New(isolate, err));
-    return;
-  }
-  stream->next_in = reinterpret_cast<Bytef *>(in->Data());
-  stream->avail_in = in->ByteLength();
-  stream->next_out = reinterpret_cast<Bytef *>(chunk);
-  stream->avail_out = outlen;
-  outab->SetAlignedPointerInInternalField(1, stream);
-  args.GetReturnValue().Set(outab);
-}
-
-void just::zlib::CreateInflate(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  HandleScope handleScope(isolate);
-  Local<Context> context = isolate->GetCurrentContext();
-  z_stream* stream = (z_stream*)calloc(1, sizeof(z_stream));
-  int argc = args.Length();
-  int windowbits = Z_DEFAULT_WINDOW_BITS;
-  Local<ArrayBuffer> inab = args[0].As<ArrayBuffer>();
-  std::shared_ptr<BackingStore> in = inab->GetBackingStore();
-  int outlen = 4096; // todo: use size of buffer
-  if (argc > 1) {
-    outlen = args[1]->Uint32Value(context).ToChecked();
-  }
-  void* chunk = calloc(1, outlen);
-  std::unique_ptr<BackingStore> out =
-      ArrayBuffer::NewBackingStore(chunk, outlen, FreeMemory, nullptr);
-  Local<ArrayBuffer> outab = ArrayBuffer::New(isolate, std::move(out));
-  if (argc > 2) windowbits = args[2]->Int32Value(context).ToChecked();
-  unsigned int err = inflateInit2(stream, windowbits);
-  if (err != Z_OK) {
-    args.GetReturnValue().Set(Integer::New(isolate, err));
-    return;
-  }
-  stream->next_in = reinterpret_cast<Bytef *>(in->Data());
-  stream->avail_in = in->ByteLength();
-  stream->next_out = reinterpret_cast<Bytef *>(chunk);
-  stream->avail_out = outlen;
-  outab->SetAlignedPointerInInternalField(1, stream);
-  args.GetReturnValue().Set(outab);
-}
-
-void just::zlib::Init(Isolate* isolate, Local<ObjectTemplate> target) {
+void just::lz4::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> module = ObjectTemplate::New(isolate);
-  SET_METHOD(isolate, module, "createDeflate", CreateDeflate);
-  SET_METHOD(isolate, module, "createInflate", CreateInflate);
-  SET_METHOD(isolate, module, "crc32", Crc32);
-  SET_METHOD(isolate, module, "writeDeflate", WriteDeflate);
-  SET_METHOD(isolate, module, "writeInflate", WriteInflate);
-  SET_METHOD(isolate, module, "endDeflate", EndDeflate);
-  SET_METHOD(isolate, module, "endInflate", EndInflate);
+  SET_METHOD(isolate, module, "compressBound", CompressBound);
+  SET_METHOD(isolate, module, "compress", Compress);
+  SET_METHOD(isolate, module, "decompress", Decompress);
+/*
   SET_VALUE(isolate, module, "Z_NO_FLUSH", Integer::New(isolate, 
     Z_NO_FLUSH));
   SET_VALUE(isolate, module, "Z_FULL_FLUSH", Integer::New(isolate, 
@@ -213,6 +129,6 @@ void just::zlib::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, module, "Z_BUF_ERROR", Integer::New(isolate, Z_BUF_ERROR));
   SET_VALUE(isolate, module, "Z_VERSION_ERROR", Integer::New(isolate, 
     Z_VERSION_ERROR));
-
-  SET_MODULE(isolate, target, "zlib", module);
+*/
+  SET_MODULE(isolate, target, "lz4", module);
 }

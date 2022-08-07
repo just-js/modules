@@ -3,14 +3,10 @@
 void just::iouring::QueueInit(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   Local<Context> context = isolate->GetCurrentContext();
-
-  //Local<BigInt> entries = args[0].As<BigInt>();
   int entries = Local<Integer>::Cast(args[0])->Value();
 	struct io_uring* ring = (struct io_uring*)calloc(1, sizeof(struct io_uring));
 	int r = io_uring_queue_init(entries, ring, 0);
-  if (r < 0) {
-    return;
-  }
+  if (r < 0) return;
   Local<ObjectTemplate> ringTemplate = ObjectTemplate::New(isolate);
   ringTemplate->SetInternalFieldCount(1);
   Local<Object> ringObj = ringTemplate->NewInstance(context).ToLocalChecked();
@@ -19,19 +15,23 @@ void just::iouring::QueueInit(const FunctionCallbackInfo<Value> &args) {
 }
 
 void just::iouring::QueueExit(const FunctionCallbackInfo<Value> &args) {
-  struct io_uring* ring = (struct io_uring*)args[0].As<Object>()->GetAlignedPointerFromInternalField(0);
+  struct io_uring* ring = (struct io_uring*)args[0]
+    .As<Object>()->GetAlignedPointerFromInternalField(0);
 	io_uring_queue_exit(ring);
 }
 
 void just::iouring::Submit(const FunctionCallbackInfo<Value> &args) {
-  struct io_uring* ring = (struct io_uring*)args[0].As<Object>()->GetAlignedPointerFromInternalField(0);
-  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), io_uring_submit(ring)));
+  struct io_uring* ring = (struct io_uring*)args[0]
+    .As<Object>()->GetAlignedPointerFromInternalField(0);
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), 
+    io_uring_submit(ring)));
 }
 
 void just::iouring::GetSQE(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   Local<Context> context = isolate->GetCurrentContext();
-  struct io_uring* ring = (struct io_uring*)args[0].As<Object>()->GetAlignedPointerFromInternalField(0);
+  struct io_uring* ring = (struct io_uring*)args[0]
+    .As<Object>()->GetAlignedPointerFromInternalField(0);
   Local<ObjectTemplate> sqeTemplate = ObjectTemplate::New(isolate);
   sqeTemplate->SetInternalFieldCount(1);
   Local<Object> sqeObj = sqeTemplate->NewInstance(context).ToLocalChecked();
@@ -41,39 +41,11 @@ void just::iouring::GetSQE(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(sqeObj);
 }
 
-void just::iouring::PrepReadV(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  Local<Context> context = isolate->GetCurrentContext();
-  io_uring_sqe* sqe = (io_uring_sqe*)args[0].As<Object>()->GetAlignedPointerFromInternalField(0);
-  int infd = Local<Integer>::Cast(args[1])->Value();
-  Local<Array> buffers = args[2].As<Array>();
-  //Local<BigInt> offset = args[3].As<BigInt>();
-  int offset = Local<Integer>::Cast(args[3])->Value();
-  unsigned int nbufs = buffers->Length();
-  struct just::iouring::io_data* iodata = (struct just::iouring::io_data*)calloc(nbufs, sizeof(struct just::iouring::io_data));
-  iodata->iov = (struct iovec*)calloc(nbufs, sizeof(struct iovec));
-  iodata->read = 1;
-  iodata->first_offset = offset;
-  for (unsigned int i = 0; i < nbufs; i++) {
-    Local<Value> val = buffers->Get(context, i).ToLocalChecked();
-    Local<ArrayBuffer> ab = val.As<ArrayBuffer>();
-    std::shared_ptr<BackingStore> backing = ab->GetBackingStore();
-    unsigned char* data = (unsigned char*)backing->Data();
-    unsigned int len = backing->ByteLength();
-    iodata->read = nbufs;
-    iodata->index = i;
-    iodata->offset = iodata->first_offset = offset;
-    iodata->iov[i].iov_base = data;
-    iodata->iov[i].iov_len = len;
-  }
-	io_uring_prep_readv(sqe, infd, iodata->iov, nbufs, offset);
-	io_uring_sqe_set_data(sqe, iodata);
-}
-
 void just::iouring::WaitCQE(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   Local<Context> context = isolate->GetCurrentContext();
-  struct io_uring* ring = (struct io_uring*)args[0].As<Object>()->GetAlignedPointerFromInternalField(0);
+  struct io_uring* ring = (struct io_uring*)args[0]
+    .As<Object>()->GetAlignedPointerFromInternalField(0);
 	struct io_uring_cqe *cqe;
   int rc = io_uring_wait_cqe(ring, &cqe);
   Local<Array> result = args[1].As<Array>();
@@ -90,7 +62,8 @@ void just::iouring::WaitCQE(const FunctionCallbackInfo<Value> &args) {
 void just::iouring::PeekCQE(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   Local<Context> context = isolate->GetCurrentContext();
-  struct io_uring* ring = (struct io_uring*)args[0].As<Object>()->GetAlignedPointerFromInternalField(0);
+  struct io_uring* ring = (struct io_uring*)args[0]
+    .As<Object>()->GetAlignedPointerFromInternalField(0);
 	struct io_uring_cqe *cqe;
   int rc = io_uring_peek_cqe(ring, &cqe);
   Local<Array> result = args[1].As<Array>();
@@ -107,8 +80,10 @@ void just::iouring::PeekCQE(const FunctionCallbackInfo<Value> &args) {
 void just::iouring::GetData(const FunctionCallbackInfo<Value> &args) {
   Isolate *isolate = args.GetIsolate();
   Local<Context> context = isolate->GetCurrentContext();
-  struct io_uring_cqe* cqe = (struct io_uring_cqe*)args[0].As<Object>()->GetAlignedPointerFromInternalField(0);
-  struct just::iouring::io_data* iodata = (struct just::iouring::io_data*)io_uring_cqe_get_data(cqe);
+  struct io_uring_cqe* cqe = (struct io_uring_cqe*)args[0]
+    .As<Object>()->GetAlignedPointerFromInternalField(0);
+  struct just::iouring::io_data* iodata = 
+    (struct just::iouring::io_data*)io_uring_cqe_get_data(cqe);
   Local<Array> result = args[1].As<Array>();
   result->Set(context, 0, Integer::New(isolate, cqe->res)).Check();
   result->Set(context, 1, Integer::New(isolate, iodata->index)).Check();
@@ -116,38 +91,50 @@ void just::iouring::GetData(const FunctionCallbackInfo<Value> &args) {
 }
 
 void just::iouring::CQESeen(const FunctionCallbackInfo<Value> &args) {
-  struct io_uring* ring = (struct io_uring*)args[0].As<Object>()->GetAlignedPointerFromInternalField(0);
-  struct io_uring_cqe* cqe = (struct io_uring_cqe*)args[1].As<Object>()->GetAlignedPointerFromInternalField(0);
+  struct io_uring* ring = (struct io_uring*)args[0]
+    .As<Object>()->GetAlignedPointerFromInternalField(0);
+  struct io_uring_cqe* cqe = (struct io_uring_cqe*)args[1]
+    .As<Object>()->GetAlignedPointerFromInternalField(0);
   io_uring_cqe_seen(ring, cqe);
 }
 
-void just::iouring::PrepWriteV(const FunctionCallbackInfo<Value> &args) {
-  Isolate *isolate = args.GetIsolate();
-  Local<Context> context = isolate->GetCurrentContext();
-  io_uring_sqe* sqe = (io_uring_sqe*)args[0].As<Object>()->GetAlignedPointerFromInternalField(0);
+void just::iouring::PrepReadV(const FunctionCallbackInfo<Value> &args) {
+  io_uring_sqe* sqe = (io_uring_sqe*)args[0]
+    .As<Object>()->GetAlignedPointerFromInternalField(0);
   int infd = Local<Integer>::Cast(args[1])->Value();
-  Local<Array> buffers = args[2].As<Array>();
-  //Local<BigInt> offset = args[3].As<BigInt>();
+  Local<ArrayBuffer> ab = args[2].As<ArrayBuffer>();
+  std::shared_ptr<BackingStore> backing = ab->GetBackingStore();
+  unsigned char* data = (unsigned char*)backing->Data();
+  unsigned int len = backing->ByteLength();
   int offset = Local<Integer>::Cast(args[3])->Value();
+  int index = Local<Integer>::Cast(args[4])->Value();
+  struct just::iouring::io_data* iodata = 
+    (struct just::iouring::io_data*)calloc(1, 
+    sizeof(struct just::iouring::io_data));
+  iodata->iov.iov_base = data;
+  iodata->iov.iov_len = len;
+  iodata->index = index;
+	io_uring_prep_readv(sqe, infd, &iodata->iov, 1, offset);
+	io_uring_sqe_set_data(sqe, iodata);
+}
 
-  unsigned int nbufs = buffers->Length();
-  struct just::iouring::io_data* iodata = (struct just::iouring::io_data*)calloc(nbufs, sizeof(struct just::iouring::io_data));
-  iodata->iov = (struct iovec*)calloc(nbufs, sizeof(struct iovec));
-  iodata->read = 0;
-  iodata->offset = iodata->first_offset = offset;
-  for (unsigned int i = 0; i < nbufs; i++) {
-    Local<Value> val = buffers->Get(context, i).ToLocalChecked();
-    Local<ArrayBuffer> ab = val.As<ArrayBuffer>();
-    std::shared_ptr<BackingStore> backing = ab->GetBackingStore();
-    unsigned char* data = (unsigned char*)backing->Data();
-    unsigned int len = backing->ByteLength();
-    iodata->read = nbufs;
-    iodata->index = i;
-    iodata->offset = iodata->first_offset = offset;
-    iodata->iov[i].iov_base = data;
-    iodata->iov[i].iov_len = len;
-  }
-	io_uring_prep_writev(sqe, infd, iodata->iov, nbufs, offset);
+void just::iouring::PrepWriteV(const FunctionCallbackInfo<Value> &args) {
+  io_uring_sqe* sqe = (io_uring_sqe*)args[0]
+    .As<Object>()->GetAlignedPointerFromInternalField(0);
+  int infd = Local<Integer>::Cast(args[1])->Value();
+  Local<ArrayBuffer> ab = args[2].As<ArrayBuffer>();
+  std::shared_ptr<BackingStore> backing = ab->GetBackingStore();
+  unsigned char* data = (unsigned char*)backing->Data();
+  unsigned int len = backing->ByteLength();
+  int offset = Local<Integer>::Cast(args[3])->Value();
+  int index = Local<Integer>::Cast(args[4])->Value();
+  struct just::iouring::io_data* iodata = 
+    (struct just::iouring::io_data*)calloc(1, 
+    sizeof(struct just::iouring::io_data));
+  iodata->iov.iov_base = data;
+  iodata->iov.iov_len = len;
+  iodata->index = index;
+	io_uring_prep_writev(sqe, infd, &iodata->iov, 1, offset);
 	io_uring_sqe_set_data(sqe, iodata);
 }
 

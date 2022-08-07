@@ -37,6 +37,7 @@ vfs: deps/sqlite/build/.libs/libsqlite3.a ## build shared vfs library
 clean: ## tidy up
 	rm -f *.o
 	rm -f *.so
+	rm -f *.so.debug
 
 all: ## make all
 	make clean

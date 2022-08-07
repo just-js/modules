@@ -28,6 +28,7 @@ library: ## build shared library
 clean: ## tidy up
 	rm -f *.o
 	rm -f *.so
+	rm -f *.so.debug
 
 all: ## make all
 	make clean

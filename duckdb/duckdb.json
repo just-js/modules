@@ -1,0 +1,4 @@
+{
+  "obj": ["deps/duckdb.o"],
+  "lib": ["z"]
+}

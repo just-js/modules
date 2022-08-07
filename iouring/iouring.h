@@ -10,10 +10,7 @@ namespace iouring {
 
 struct io_data {
 	int index;
-	int read;
-	off_t first_offset, offset;
-	size_t first_len;
-	struct iovec* iov;
+	struct iovec iov;
 };
 
 void QueueInit(const FunctionCallbackInfo<Value> &args);

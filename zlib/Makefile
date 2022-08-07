@@ -26,6 +26,8 @@ library: deps ## build shared library
 clean: ## tidy up
 	rm -f *.o
 	rm -f *.so
+	rm -f *.so.debug
+	rm -f *.a
 
 all: ## make all
 	make clean

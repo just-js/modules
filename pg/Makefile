@@ -28,6 +28,7 @@ library: deps/postgresql-12.3/src/interfaces/libpq/libpq.a ## build shared libra
 clean: ## tidy up
 	rm -f *.o
 	rm -f *.so
+	rm -f *.so.debug
 
 all: ## make all
 	make clean

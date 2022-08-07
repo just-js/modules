@@ -30,6 +30,7 @@ library: deps/openssl-OpenSSL_1_1_1d/libcrypto.a deps/openssl-OpenSSL_1_1_1d/lib
 clean: ## tidy up
 	rm -f *.o
 	rm -f *.so
+	rm -f *.so.debug
 
 all: ## make all
 	make clean
