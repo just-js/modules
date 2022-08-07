@@ -15,22 +15,12 @@ deps:
 	mv deps/liburing-liburing-2.2/ deps/liburing/
 	rm deps/liburing.tar.gz
 
-deps/bestline-master/bestline.o: deps ## dependencies
-	cd deps/liburing
-	./configure
-	CFLAGS="-fPIC" make
-	cd ../../
+deps/liburing/src/liburing.a: deps ## dependencies
+	cd deps/liburing && ./configure && CFLAGS="-fPIC" make
 
-library: ## build shared library
+library: deps/liburing/src/liburing.a ## build shared library
 	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -Ideps/liburing/src/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -g -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
-#	$(CC) -g -shared -flto -pthread -m64 -Wl,--start-group deps/liburing/src/liburing.a ${MODULE}.o -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
 	$(CC) -g -shared -flto -pthread -m64 -Wl,--start-group ${MODULE}.o -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so -Ldeps/liburing/src -luring
-	objcopy --only-keep-debug ${MODULE}.so ${MODULE}.so.debug
-	strip --strip-debug --strip-unneeded ${MODULE}.so
-
-library-static: ## build shared library
-	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -Ideps/liburing/src/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -g -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
-	$(CC) -g -shared -flto -pthread -m64 -Wl,--start-group deps/liburing/src/liburing.a ${MODULE}.o -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
 	objcopy --only-keep-debug ${MODULE}.so ${MODULE}.so.debug
 	strip --strip-debug --strip-unneeded ${MODULE}.so
 
