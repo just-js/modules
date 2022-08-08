@@ -13,11 +13,7 @@ deps:
 	mkdir -p deps
 	curl -L -o deps/libdatachannel-$(LIBDATACHANNEL_VERSION).tar.gz https://github.com/paullouisageneau/libdatachannel/archive/v$(LIBDATACHANNEL_VERSION).tar.gz
 	tar -zxvf deps/libdatachannel-$(LIBDATACHANNEL_VERSION).tar.gz -C deps/
-	git submodule update --init --recursive
-	cd deps/libdatachannel-$(LIBDATACHANNEL_VERSION)
-	cmake -DUSE_GNUTLS=0 -DUSE_NICE=0 -DNO_MEDIA=1 -DNO_WEBSOCKET=1
-	make datachannel datachannel-static juice juice-static usrsctp
-	cd ../../../
+	unset MAKELEVEL && unset MAKEFLAGS && unset MFLAGS && cd deps/libdatachannel-$(LIBDATACHANNEL_VERSION) && git init && rm -fr deps && git submodule add https://github.com/SergiusTheBest/plog.git deps/plog && git submodule add https://github.com/sctplab/usrsctp.git deps/usrsctp && git submodule add https://github.com/paullouisageneau/libjuice.git deps/libjuice && git submodule add https://github.com/nlohmann/json.git deps/json && git submodule add https://github.com/cisco/libsrtp.git deps/libsrtp && git submodule update --init --recursive --depth 1 && cmake -DUSE_GNUTLS=0 -DUSE_NICE=0 -DNO_MEDIA=1 -DNO_WEBSOCKET=1 -DCMAKE_BUILD_TYPE=Release && make datachannel datachannel-static juice juice-static usrsctp
 
 library: deps ## build shared library
 	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/libdatachannel-$(LIBDATACHANNEL_VERSION)/include -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -g -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc

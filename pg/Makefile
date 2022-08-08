@@ -12,14 +12,9 @@ deps: ## dependencies
 	mkdir -p deps
 	curl -o deps/postgresql-12.3.tar.gz https://ftp.postgresql.org/pub/source/v12.3/postgresql-12.3.tar.gz
 	tar -zxvf deps/postgresql-12.3.tar.gz -C deps/
-	cd deps/postgresql-12.3 && CFLAGS="-fPIC" ./configure --without-readline --without-zlib
+	unset MAKELEVEL && unset MAKEFLAGS && unset MFLAGS && cd deps/postgresql-12.3 && CFLAGS="-fPIC -Isrc/backend" ./configure --without-readline --without-zlib && make -C src/interfaces
 
-deps/postgresql-12.3/src/interfaces/libpq/libpq.a: deps
-	cd deps/postgresql-12.3 && make -C src/bin
-	cd deps/postgresql-12.3 && make -C src/include
-	cd deps/postgresql-12.3 && make -C src/interfaces
-
-library: deps/postgresql-12.3/src/interfaces/libpq/libpq.a ## build shared library
+library: ## build shared library
 	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -Ideps/postgresql-12.3/src/include -Ideps/postgresql-12.3/src -Ideps/postgresql-12.3/src/interfaces/libpq -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -g -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
 	$(CC) -g -s -shared -flto -pthread -m64 -Wl,--start-group ${MODULE}.o deps/postgresql-12.3/src/interfaces/libpq/libpq.a deps/postgresql-12.3/src/port/libpgport_shlib.a deps/postgresql-12.3/src/common/libpgcommon_shlib.a -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so
 	objcopy --only-keep-debug ${MODULE}.so ${MODULE}.so.debug
