@@ -13,12 +13,9 @@ deps:
 	curl -L -o deps/sqlite.tar.gz https://www.sqlite.org/src/tarball/sqlite.tar.gz?r=release
 	tar -zxvf deps/sqlite.tar.gz -C deps/
 
-deps/sqlite/build/sqlite3.o: deps ## dependencies
+deps/sqlite/build/.libs/libsqlite3.a: deps ## dependencies
 	mkdir -p deps/sqlite/build
-	cd deps/sqlite/build
-	../configure --disable-math --disable-readline --disable-tcl --with-pic --enable-session
-	make
-	cd ../../../
+	cd deps/sqlite/build && ../configure --disable-math --disable-readline --disable-tcl --with-pic --enable-session && make
 
 library: deps/sqlite/build/.libs/libsqlite3.a ## build shared library
 	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps/sqlite/build -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -g -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc

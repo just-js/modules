@@ -14,11 +14,9 @@ deps:
 	unzip deps/libduckdb.zip -d deps/
 
 deps/duckdb.o: deps ## dependencies
-	cd deps
-	$(CC) -fPIC -c -O3 -o duckdb.o duckdb.cpp
-	cd ..
+	cd deps && $(CC) -fPIC -c -O3 -o duckdb.o duckdb.cpp
 
-library: ## build shared library
+library: deps/duckdb.o ## build shared library
 	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -I. -Ideps -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -g -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
 	$(CC) -g -s -shared -flto -pthread -m64 -Wl,--start-group ${MODULE}.o deps/duckdb.o -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so -ldl -lrt
 	objcopy --only-keep-debug ${MODULE}.so ${MODULE}.so.debug

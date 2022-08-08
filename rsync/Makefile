@@ -13,12 +13,9 @@ deps:
 	mkdir -p deps
 	curl -L -o deps/librsync.tar.gz https://codeload.github.com/librsync/librsync/tar.gz/v2.3.2
 	tar -zxvf deps/librsync.tar.gz -C deps/
-	cd ${DEPS}/
-	cmake .
-	make -j4
-	cd ../../
+	cd ${DEPS}/ && cmake . && make -j4
 
-library: ## build shared library
+library: deps ## build shared library
 	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -Ideps/bestline-master -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -g -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
 	$(CC) -g -s -shared -flto -pthread -m64 -Wl,--start-group ${OBJS} ${MODULE}.o -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so -ldl -lrt
 	objcopy --only-keep-debug ${MODULE}.so ${MODULE}.so.debug

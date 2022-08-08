@@ -2,11 +2,14 @@
 #define JUST_BESTLINE_H
 
 #include <just.h>
+
+extern "C" {
 #include "deps/bestline-master/bestline.h"
+}
 
 namespace just {
 
-namespace bestline {
+namespace bestlines {
 void Bestline(const FunctionCallbackInfo<Value> &args);
 
 void BestlineHistoryLoad(const FunctionCallbackInfo<Value> &args);
@@ -23,8 +26,8 @@ void Init(Isolate* isolate, Local<ObjectTemplate> target);
 }
 
 extern "C" {
-	void* _register_bestline() {
-		return (void*)just::bestline::Init;
+	void* _register_bestlines() {
+		return (void*)just::bestlines::Init;
 	}
 }
 

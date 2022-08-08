@@ -13,8 +13,7 @@ deps: ## dependencies
 	mkdir -p deps
 	curl -L -o deps/libseccomp-${SECCOMP_VERSION}.tar.gz https://github.com/seccomp/libseccomp/releases/download/v${SECCOMP_VERSION}/libseccomp-${SECCOMP_VERSION}.tar.gz
 	tar -zxvf deps/libseccomp-${SECCOMP_VERSION}.tar.gz -C deps/
-	#make -C deps/libseccomp-${SECCOMP_VERSION}/ clean
-	cd deps/libseccomp-${SECCOMP_VERSION} && CFLAGS='-mstackrealign -fPIC -O3' ./configure --enable-shared=no && cd ../../
+	cd deps/libseccomp-${SECCOMP_VERSION} && CFLAGS='-mstackrealign -fPIC -O3' ./configure --enable-shared=no
 	make -C deps/libseccomp-${SECCOMP_VERSION}/
 
 library: deps ## build shared library

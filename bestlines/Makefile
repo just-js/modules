@@ -1,7 +1,7 @@
 C = gcc
 CC = g++
 LIBS=/usr/local/lib/just
-MODULE=bestline
+MODULE=bestlines
 
 .PHONY: help clean
 
@@ -14,11 +14,9 @@ deps:
 	tar -zxvf deps/bestline.tar.gz -C deps/
 
 deps/bestline-master/bestline.o: deps ## dependencies
-	cd deps/bestline-master
-	$(C) -fPIC -c -O3 -o bestline.o bestline.c
-	cd ../../
+	cd deps/bestline-master && $(C) -fPIC -c -O3 -o bestline.o bestline.c
 
-library: ## build shared library
+library: deps/bestline-master/bestline.o ## build shared library
 	$(CC) -c -fPIC -std=c++17 -DV8_COMPRESS_POINTERS -Ideps/bestline-master -I$(JUST_HOME) -I$(JUST_HOME)/deps/v8/include -g -O3 -march=native -mtune=native -Wall -Wextra -flto -Wno-unused-parameter ${MODULE}.cc
 	$(CC) -g -s -shared -flto -pthread -m64 -Wl,--start-group deps/bestline-master/bestline.o ${MODULE}.o -Wl,--end-group -Wl,-soname=${MODULE}.so -o ${MODULE}.so -ldl -lrt
 	objcopy --only-keep-debug ${MODULE}.so ${MODULE}.so.debug
