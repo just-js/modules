@@ -249,7 +249,7 @@ void just::vm::RunModule(const FunctionCallbackInfo<Value> &args) {
     }
     return;
   }
-  Maybe<bool> ok2 = module->InstantiateModule(context, just::callResolve);
+  Maybe<bool> ok2 = module->InstantiateModule(context, just::OnModuleInstantiate);
   if (ok2.IsNothing()) {
     if (try_catch.HasCaught() && !try_catch.HasTerminated()) {
       try_catch.ReThrow();
