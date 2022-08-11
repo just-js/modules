@@ -188,7 +188,6 @@ void just::vm::RunScript(const FunctionCallbackInfo<Value> &args) {
   TryCatch try_catch(isolate);
   Local<String> source = args[0].As<String>();
   Local<String> path = args[1].As<String>();
-
   Local<v8::PrimitiveArray> opts =
       v8::PrimitiveArray::New(isolate, 1);
   opts->Set(isolate, 0, v8::Number::New(isolate, 1));
@@ -226,14 +225,14 @@ void just::vm::RunModule(const FunctionCallbackInfo<Value> &args) {
   TryCatch try_catch(isolate);
   Local<String> source = args[0].As<String>();
   Local<String> path = args[1].As<String>();
-
   Local<v8::PrimitiveArray> opts =
-      v8::PrimitiveArray::New(isolate, 1);
-  opts->Set(isolate, 0, v8::Number::New(isolate, 1));
+      v8::PrimitiveArray::New(isolate, just::HostDefinedOptions::kLength);
+  opts->Set(isolate, just::HostDefinedOptions::kType,
+                            v8::Number::New(isolate, just::ScriptType::kModule));
   ScriptOrigin baseorigin(isolate, path, // resource name
     0, // line offset
     0,  // column offset
-    false, // is shared cross-origin
+    true, // is shared cross-origin
     -1,  // script id
     Local<Value>(), // source map url
     false, // is opaque
@@ -250,15 +249,13 @@ void just::vm::RunModule(const FunctionCallbackInfo<Value> &args) {
     }
     return;
   }
-/*
-  Maybe<bool> ok2 = module->InstantiateModule(context, OnModuleInstantiate);
+  Maybe<bool> ok2 = module->InstantiateModule(context, just::callResolve);
   if (ok2.IsNothing()) {
     if (try_catch.HasCaught() && !try_catch.HasTerminated()) {
       try_catch.ReThrow();
     }
     return;
   }
-*/
   MaybeLocal<Value> result = module->Evaluate(context);
   if (try_catch.HasCaught() && !try_catch.HasTerminated()) {
     try_catch.ReThrow();
