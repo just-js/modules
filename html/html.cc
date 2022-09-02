@@ -13,6 +13,9 @@ std::string htmlTranslate(const char *str, size_t length)
       case '&':
         ret.append("&amp;", 5);
         break;
+      case '\'':
+        ret.append("&#x27;", 6);
+        break;
       case '<':
         ret.append("&lt;", 4);
         break;
