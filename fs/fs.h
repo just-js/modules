@@ -41,6 +41,11 @@ void Mkfifo(const FunctionCallbackInfo<Value> &args);
 void Realpath(const FunctionCallbackInfo<Value> &args);
 void Chmod(const FunctionCallbackInfo<Value> &args);
 void Chown(const FunctionCallbackInfo<Value> &args);
+
+void Read(const FunctionCallbackInfo<Value> &args);
+void Write(const FunctionCallbackInfo<Value> &args);
+void Close(const FunctionCallbackInfo<Value> &args);
+
 void Init(Isolate* isolate, Local<ObjectTemplate> target);
 
 }

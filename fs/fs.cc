@@ -222,6 +222,35 @@ void just::fs::FDataSync(const FunctionCallbackInfo<Value> &args) {
   args.GetReturnValue().Set(Integer::New(args.GetIsolate(), fdatasync(Local<Integer>::Cast(args[0])->Value())));
 }
 
+void just::fs::Close(const FunctionCallbackInfo<Value> &args) {
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), 
+    close(Local<Integer>::Cast(args[0])->Value())));
+}
+
+void just::fs::Write(const FunctionCallbackInfo<Value> &args) {
+  int fd = Local<Integer>::Cast(args[0])->Value();
+  Local<ArrayBuffer> ab = args[1].As<ArrayBuffer>();
+  void* data = ab->GetBackingStore()->Data();
+  int argc = args.Length();
+  int len = Local<Integer>::Cast(args[2])->Value();
+  int off = 0;
+  if (argc > 3) off = Local<Integer>::Cast(args[3])->Value();
+  char* buf = (char*)data + off;
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), write(fd, 
+    buf, len)));
+}
+
+void just::fs::Read(const FunctionCallbackInfo<Value> &args) {
+  int fd = Local<Integer>::Cast(args[0])->Value();
+  Local<ArrayBuffer> buf = args[1].As<ArrayBuffer>();
+  void* data = buf->GetBackingStore()->Data();
+  int off = Local<Integer>::Cast(args[2])->Value();
+  int len = Local<Integer>::Cast(args[3])->Value();
+  const char* dest = (const char*)data + off;
+  args.GetReturnValue().Set(Integer::New(args.GetIsolate(), 
+    read(fd, (void*)dest, len)));
+}
+
 void just::fs::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   Local<ObjectTemplate> fs = ObjectTemplate::New(isolate);
   SET_METHOD(isolate, fs, "open", just::fs::Open);
@@ -248,6 +277,10 @@ void just::fs::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_METHOD(isolate, fs, "chmod", just::fs::Chmod);
   SET_METHOD(isolate, fs, "chown", just::fs::Chown);
   // todo: move fcntl here
+
+  SET_METHOD(isolate, fs, "read", just::fs::Read);
+  SET_METHOD(isolate, fs, "write", just::fs::Write);
+  SET_METHOD(isolate, fs, "close", just::fs::Close);
 
   SET_VALUE(isolate, fs, "O_RDONLY", Integer::New(isolate, O_RDONLY));
   SET_VALUE(isolate, fs, "O_WRONLY", Integer::New(isolate, O_WRONLY));

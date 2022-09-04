@@ -983,6 +983,8 @@ void just::sys::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, sys, "MS_SYNC", Integer::New(isolate, MS_SYNC));
   SET_VALUE(isolate, sys, "MS_INVALIDATE", Integer::New(isolate, MS_INVALIDATE));
 
+  SET_VALUE(isolate, sys, "EAGAIN", Integer::New(isolate, EAGAIN));
+  SET_VALUE(isolate, sys, "O_NONBLOCK", Integer::New(isolate, O_NONBLOCK));
 
 #ifdef __BYTE_ORDER
   // These don't work on alpine. will have to investigate why not

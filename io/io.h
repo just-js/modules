@@ -1,5 +1,5 @@
-#ifndef JUST_NET_H
-#define JUST_NET_H
+#ifndef JUST_IO_H
+#define JUST_IO_H
 
 #include <just.h>
 #include <sys/io.h>

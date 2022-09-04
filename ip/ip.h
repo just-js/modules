@@ -1,5 +1,5 @@
-#ifndef JUST_NET_H
-#define JUST_NET_H
+#ifndef JUST_IP_H
+#define JUST_IP_H
 
 #include <just.h>
 #include <sys/socket.h>

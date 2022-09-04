@@ -451,7 +451,6 @@ void just::net::Init(Isolate* isolate, Local<ObjectTemplate> target) {
   SET_VALUE(isolate, net, "AF_MPLS", Integer::New(isolate, AF_MPLS));
   SET_VALUE(isolate, net, "AF_CAN", Integer::New(isolate, AF_CAN));
   // Protocol Families - bits/socket.h
-  SET_VALUE(isolate, net, "AF_PACKET", Integer::New(isolate, AF_PACKET));
   SET_VALUE(isolate, net, "ETH_P_ALL", Integer::New(isolate, ETH_P_ALL));
   // packet types - linux/if_packet.h
   SET_VALUE(isolate, net, "PACKET_BROADCAST", Integer::New(isolate, PACKET_BROADCAST));
